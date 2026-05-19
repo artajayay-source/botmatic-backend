@@ -959,6 +959,8 @@
      SCREEN: LANDING
 ══════════════════════════════════════ -->
 <div id="screen-landing" class="screen">
+  <div id="bot-active-notice" style="display:none;background:#16a34a22;border:1px solid #22c55e55;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#4ade80;line-height:1.5;"></div>
+
   <div class="logo">
     <div class="logo-icon">🤖</div>
     <div class="logo-text">Bot<span>Matic</span></div>
@@ -1497,7 +1499,7 @@
 'use strict';
 
 // ── AUTH STATE ───────────────────────────────────────────────
-let _authToken = null;
+let _authToken = sessionStorage.getItem('bm_token') || null;
 let _authUser  = null;
 
 // ── STATE ────────────────────────────────────────────────────
@@ -1589,6 +1591,7 @@ async function doRegister(e) {
 
 function onAuthSuccess(data) {
   _authToken = data.session?.access_token;
+  sessionStorage.setItem('bm_token', _authToken);
   _authUser  = data.user;
 
   // Update user badge
@@ -1609,11 +1612,15 @@ async function checkUserBusiness() {
     });
     const data = await resp.json();
     if (data.businesses && data.businesses.length > 0) {
-      // Sudah punya bisnis → langsung ke dashboard (gunakan bisnis pertama)
+      // Sudah punya bisnis → ke landing dengan info bot aktif
       S.businessId = data.businesses[0].id;
-      show('screen-success');
-      document.getElementById('success-msg').innerHTML =
-        `Bot WhatsApp untuk <strong>${data.businesses[0].name}</strong> sudah aktif dan melayani customer 24/7.`;
+      show('screen-landing');
+      // Tampilkan notif bot sudah aktif
+      const notif = document.getElementById('bot-active-notice');
+      if (notif) {
+        notif.style.display = 'block';
+        notif.innerHTML = `✅ Bot <strong>${data.businesses[0].name}</strong> sedang aktif. <a href="#" onclick="goToDashboard();return false;" style="color:var(--green)">Lihat Status</a> atau setup bot baru di bawah.`;
+      }
     } else {
       // Belum punya bisnis → ke landing untuk mulai onboarding
       show('screen-landing');
@@ -1634,6 +1641,7 @@ async function doLogout() {
   } catch (_) {}
   _authToken = null;
   _authUser  = null;
+  sessionStorage.removeItem('bm_token');
   document.getElementById('user-badge').classList.remove('show');
   show('screen-auth');
 }
@@ -1643,7 +1651,24 @@ function scrollToDemo() {
 }
 
 function restartApp() {
-  if (confirm('Reset semua data dan mulai dari awal?')) location.reload();
+  // Reset state tanpa logout - langsung ke landing
+  currentStep = 1;
+  Object.assign(S, {
+    bizName:'', bizType:'', bizCity:'', bizWa:'', bizIg:'',
+    bizDesc:'', orderMethod:[], brandVoice:'', botName:'',
+    emojiStyle:'✅🙏😊', openTime:'', closeTime:'',
+    operDays:['Senin','Selasa','Rabu','Kamis','Jumat'],
+    bizAddress:'', products:[], faqs:[], scripts:{}, businessId: null
+  });
+  show('screen-landing');
+}
+
+function goToDashboard() {
+  if (S.businessId) {
+    show('screen-success');
+  } else {
+    checkUserBusiness();
+  }
 }
 
 // ── CHIPS ────────────────────────────────────────────────────
