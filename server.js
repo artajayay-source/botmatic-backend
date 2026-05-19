@@ -1095,6 +1095,82 @@ async function processIncomingBaileysMessage(businessId, msg, sock) {
 }
 
 // ============================================================
+// AI: generateAIReply
+// Generate balasan AI menggunakan Claude berdasarkan konteks bisnis
+// ============================================================
+async function generateAIReply({ business, customerMessage, customerName, conversationHistory }) {
+  try {
+    const scripts = business.scripts?.[0] || {};
+    const products = business.products || [];
+
+    const productList = products.length > 0
+      ? products.map(p => `- ${p.name}${p.price ? ` (${p.price})` : ''}${p.description ? `: ${p.description}` : ''}`).join('\n')
+      : 'Belum ada produk yang terdaftar.';
+
+    const systemPrompt = `Kamu adalah asisten chatbot WhatsApp untuk bisnis "${business.name || 'Bisnis Kami'}".
+
+Informasi Bisnis:
+- Nama: ${business.name || '-'}
+- Jenis: ${business.category || '-'}
+- Kota: ${business.city || '-'}
+- Deskripsi: ${business.description || '-'}
+- Jam Operasional: ${business.hours_open || '08:00'} - ${business.hours_close || '17:00'}
+- Hari Operasional: ${business.days_open || 'Senin-Sabtu'}
+- Cara Order: ${business.order_method || '-'}
+- Nomor WA: ${business.wa_number || '-'}
+
+Daftar Produk/Menu:
+${productList}
+
+Gaya Bicara: ${business.brand_voice || 'Santai & Ramah'}
+Nama Bot: ${business.bot_name || 'Admin'}
+
+${scripts.greeting ? `Script Sapaan:\n${scripts.greeting}\n` : ''}
+${scripts.product_info ? `Script Info Produk:\n${scripts.product_info}\n` : ''}
+${scripts.order_guide ? `Script Cara Order:\n${scripts.order_guide}\n` : ''}
+${scripts.closing ? `Script Penutup:\n${scripts.closing}\n` : ''}
+
+Instruksi:
+- Balas dengan singkat dan ramah (maksimal 3-4 kalimat)
+- Gunakan bahasa Indonesia sehari-hari
+- Jika ditanya produk, sebutkan nama dan harga yang sesuai
+- Jika pelanggan mau order, arahkan ke cara order yang sudah ditentukan
+- Jangan menjanjikan hal yang tidak ada di data bisnis
+- Panggil pelanggan dengan nama "${customerName}" atau "Kak"`;
+
+    const messages = [
+      ...conversationHistory.slice(-10),
+      { role: 'user', content: customerMessage }
+    ];
+
+    const response = await claude.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 500,
+      system: systemPrompt,
+      messages
+    });
+
+    const content = response.content[0]?.text || 'Maaf, saya tidak bisa memproses pesanmu sekarang. Silakan coba lagi.';
+
+    return {
+      content,
+      inputTokens: response.usage?.input_tokens || 0,
+      outputTokens: response.usage?.output_tokens || 0,
+      tokensUsed: (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0)
+    };
+
+  } catch (err) {
+    console.error('generateAIReply error:', err.message);
+    return {
+      content: 'Maaf, saya sedang mengalami gangguan. Silakan hubungi kami langsung.',
+      inputTokens: 0,
+      outputTokens: 0,
+      tokensUsed: 0
+    };
+  }
+}
+
+// ============================================================
 // BAILEYS: sendWhatsAppMessage
 // Kirim pesan via Baileys session
 // ============================================================
