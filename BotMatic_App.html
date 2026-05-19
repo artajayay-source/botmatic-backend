@@ -1496,6 +1496,11 @@
 <script>
 'use strict';
 
+// ── BACKEND URL (auto-detect: Railway atau localhost) ────────
+const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:3000'
+  : window.location.origin;
+
 // ── AUTH STATE ───────────────────────────────────────────────
 let _authToken = null;
 let _authUser  = null;
