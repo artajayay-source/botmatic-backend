@@ -1245,7 +1245,7 @@ async function generateScripts({ business, products, faq }) {
 
   const voice = voiceConfig[business.brand_voice] || voiceConfig.santai;
   const productList = products.map(p =>
-    `- ${p.name}${p.price ? ` (Rp ${parseInt(p.price).toLocaleString('id-ID')})` : ''}${p.description ? `: ${p.description}` : ''}`
+    `- ${p.name}${p.price ? ` (${p.price})` : ''}${p.description ? `: ${p.description}` : ''}`
   ).join('\n');
 
   const faqText = faq.map((f, i) => `${i+1}. Q: ${f.q}\n   A: ${f.a}`).join('\n');
@@ -1355,7 +1355,8 @@ ATURAN PENTING:
 3. Sesuaikan gaya bicara dengan karakter
 4. Jika ditanya sesuatu yang tidak kamu tahu, sarankan hubungi pemilik langsung
 5. Jangan pernah berpura-pura jadi manusia, kamu adalah bot AI
-6. Sapa pelanggan dengan "${customerName}"`;
+6. Sapa pelanggan dengan "${customerName}"
+7. WAJIB: Tulis harga PERSIS seperti yang tertulis di daftar produk di atas — jangan konversi, jangan ubah format, jangan ganti mata uang. Jika tertulis $15 maka tulis $15, jika Rp 50.000 maka tulis Rp 50.000.`;
 
   try {
     const messages = [
