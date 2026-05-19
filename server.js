@@ -15,6 +15,7 @@
  * - sessions Map menyimpan state in-memory: { sock, qr, connected, waNumber }
  */
 
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import Anthropic from '@anthropic-ai/sdk';
@@ -27,6 +28,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import QRCode from 'qrcode';
+import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -143,6 +145,42 @@ if (!fs.existsSync(SESSIONS_DIR)) {
 const sessions = new Map();
 
 // ============================================================
+// MULTER — untuk upload file (extract produk via AI)
+// Max 10MB, simpan di memory (bukan disk) → langsung ke Claude
+// ============================================================
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: (req, file, cb) => {
+    const allowed = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp',
+      'application/pdf',
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain'
+    ];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Format file tidak didukung. Gunakan JPG, PNG, PDF, CSV, atau Excel.'));
+    }
+  }
+});
+
+// ============================================================
+// SERVE FRONTEND (BotMatic_App.html dari folder parent)
+// ============================================================
+const FRONTEND_PATH = path.join(__dirname, '..', 'BotMatic_App.html');
+app.get('/', (req, res) => {
+  if (fs.existsSync(FRONTEND_PATH)) {
+    res.sendFile(FRONTEND_PATH);
+  } else {
+    res.send('<h2>BotMatic API running. Frontend file not found.</h2>');
+  }
+});
+
+// ============================================================
 // HEALTH CHECK (publik)
 // ============================================================
 app.get('/api/health', (req, res) => {
@@ -152,6 +190,185 @@ app.get('/api/health', (req, res) => {
     activeSessions: sessions.size,
     time: new Date().toISOString()
   });
+});
+
+// ============================================================
+// EXTRACT PRODUCTS VIA AI (publik — bisa dipanggil sebelum login selesai onboarding)
+// POST /api/extract-products
+// Body: multipart/form-data dengan field "file"
+// Return: { products: [{name, price, description}], raw_text, total }
+// ============================================================
+app.post('/api/extract-products', requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'File tidak ditemukan. Pilih file untuk diupload.' });
+    }
+
+    const { mimetype, buffer, originalname } = req.file;
+    const isImage = mimetype.startsWith('image/');
+    const isPDF = mimetype === 'application/pdf';
+    const isText = mimetype === 'text/plain' || mimetype === 'text/csv';
+    const isExcel = mimetype.includes('excel') || mimetype.includes('spreadsheetml');
+
+    let claudeMessages = [];
+
+    if (isImage) {
+      // Kirim gambar langsung ke Claude Vision
+      const base64 = buffer.toString('base64');
+      const mediaType = mimetype === 'image/jpg' ? 'image/jpeg' : mimetype;
+      claudeMessages = [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64 }
+            },
+            {
+              type: 'text',
+              text: `Ini adalah gambar dari menu/katalog/daftar produk sebuah bisnis.
+Tolong ekstrak SEMUA produk/menu/layanan yang ada di gambar ini.
+Format output HARUS berupa JSON array seperti ini:
+{
+  "products": [
+    {"name": "Nama Produk", "price": "$15", "description": "Deskripsi singkat jika ada"},
+    ...
+  ]
+}
+Aturan:
+- Harga: salin PERSIS seperti yang tertulis di gambar, termasuk simbol mata uang (contoh: "$15", "Rp 25.000", "25rb", "15k")
+- Jangan ubah format harga — jika ada $ tulis $, jika ada Rp tulis Rp
+- Jika harga tidak ada di gambar, isi dengan ""
+- Deskripsi: ambil dari gambar jika ada, jika tidak ada isi ""
+- Ambil SEMUA item yang terlihat, jangan lewatkan satupun
+- Jika ada kategori/kelompok, tetap sertakan semua item dalam products array
+- Output HANYA JSON, tidak ada teks lain`
+            }
+          ]
+        }
+      ];
+    } else if (isPDF) {
+      // PDF: konversi ke base64 dan kirim sebagai document
+      const base64 = buffer.toString('base64');
+      claudeMessages = [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'document',
+              source: { type: 'base64', media_type: 'application/pdf', data: base64 }
+            },
+            {
+              type: 'text',
+              text: `Ini adalah dokumen PDF dari menu/katalog/daftar produk/price list sebuah bisnis.
+Tolong ekstrak SEMUA produk/menu/layanan yang ada di dokumen ini.
+Format output HARUS berupa JSON array seperti ini:
+{
+  "products": [
+    {"name": "Nama Produk", "price": "Rp 25.000", "description": "Deskripsi singkat jika ada"},
+    ...
+  ]
+}
+Aturan:
+- Harga: salin PERSIS seperti yang tertulis di dokumen, termasuk simbol mata uang (contoh: "$15", "Rp 25.000", "25rb", "15k")
+- Jangan ubah format harga — jika ada $ tulis $, jika ada Rp tulis Rp
+- Jika harga tidak ada, isi dengan ""
+- Deskripsi: ambil dari dokumen jika ada, jika tidak isi ""
+- Ambil SEMUA item, jangan lewatkan satupun
+- Output HANYA JSON, tidak ada teks lain`
+            }
+          ]
+        }
+      ];
+    } else {
+      // CSV / Excel / TXT — baca sebagai teks
+      let textContent = buffer.toString('utf-8');
+      // Batasi ke 20000 karakter
+      if (textContent.length > 20000) textContent = textContent.substring(0, 20000) + '\n...(dipotong)';
+
+      claudeMessages = [
+        {
+          role: 'user',
+          content: `Ini adalah data produk/menu dari file "${originalname}" (${mimetype}):
+
+${textContent}
+
+Tolong ekstrak SEMUA produk/menu/layanan yang ada dalam data ini.
+Format output HARUS berupa JSON:
+{
+  "products": [
+    {"name": "Nama Produk", "price": "25000", "description": "Deskripsi jika ada"},
+    ...
+  ]
+}
+Aturan:
+- Harga: salin PERSIS seperti yang tertulis, termasuk simbol mata uang (contoh: "$15", "Rp 25.000", "25rb")
+- Jangan ubah format harga
+- Jika harga tidak ada, isi dengan ""
+- Output HANYA JSON, tidak ada teks lain`
+        }
+      ];
+    }
+
+    // Panggil Claude
+    const response = await claude.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 4096,
+      messages: claudeMessages
+    });
+
+    const rawText = response.content[0]?.text || '';
+
+    // Parse JSON dari response
+    let products = [];
+    try {
+      // Ekstrak JSON dari response (kadang Claude menambahkan markdown code blocks)
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        products = parsed.products || [];
+      }
+    } catch (parseErr) {
+      console.error('Parse error:', parseErr.message);
+      return res.status(422).json({
+        error: 'AI tidak bisa membaca produk dari file ini. Pastikan file berisi daftar produk yang jelas.',
+        raw: rawText.substring(0, 500)
+      });
+    }
+
+    if (products.length === 0) {
+      return res.status(422).json({
+        error: 'Tidak ada produk yang ditemukan dalam file. Pastikan file berisi nama produk dan harga.',
+        raw: rawText.substring(0, 500)
+      });
+    }
+
+    // Bersihkan dan validasi data produk
+    const cleanProducts = products
+      .filter(p => p.name && p.name.trim())
+      .map(p => ({
+        name: String(p.name).trim().substring(0, 200),
+        price: String(p.price || '').trim().substring(0, 50), // Simpan persis termasuk simbol ($, Rp, dll)
+        description: String(p.description || '').trim().substring(0, 500)
+      }));
+
+    res.json({
+      success: true,
+      total: cleanProducts.length,
+      products: cleanProducts,
+      filename: originalname
+    });
+
+  } catch (err) {
+    console.error('extract-products error:', err);
+    if (err.message?.includes('Format file')) {
+      return res.status(400).json({ error: err.message });
+    }
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File terlalu besar. Maksimal 10MB.' });
+    }
+    res.status(500).json({ error: 'Gagal memproses file. Coba lagi atau gunakan format lain.' });
+  }
 });
 
 // ============================================================
