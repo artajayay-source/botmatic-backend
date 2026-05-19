@@ -25,7 +25,8 @@ import makeWASocket, {
   DisconnectReason,
   getContentType,
   fetchLatestBaileysVersion,
-  makeCacheableSignalKeyStore
+  makeCacheableSignalKeyStore,
+  jidNormalizedUser
 } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
 import pino from 'pino';
@@ -1016,7 +1017,23 @@ async function processIncomingBaileysMessage(businessId, msg, sock) {
 
     if (!text || text.trim() === '') return;
 
-    const senderJid = msg.key.remoteJid; // contoh: 6281234567890@s.whatsapp.net
+    // Normalisasi JID — WhatsApp baru pakai @lid untuk privasi
+    // Baileys tidak bisa kirim ke @lid, harus dikonversi ke @s.whatsapp.net
+    let rawJid = msg.key.remoteJid;
+    let senderJid;
+    if (rawJid.endsWith('@lid')) {
+      // Konversi @lid → @s.whatsapp.net pakai nomor yang sama
+      const number = rawJid.split('@')[0];
+      senderJid = `${number}@s.whatsapp.net`;
+      console.log(`[${businessId}] @lid JID dikonversi: ${rawJid} → ${senderJid}`);
+    } else {
+      try {
+        senderJid = jidNormalizedUser(rawJid);
+      } catch {
+        senderJid = rawJid;
+      }
+    }
+
     const senderWa = senderJid.replace('@s.whatsapp.net', '').replace('@c.us', '');
     const senderName = msg.pushName || 'Kak';
 
