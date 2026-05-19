@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html lang="id" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="id">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>BotMatic — Chatbot WhatsApp Otomatis untuk UMKM</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00C853">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BotMatic">
+<link rel="apple-touch-icon" href="icon-192.png">
+
+<!-- SEO -->
+<meta name="description" content="AI Chatbot WhatsApp otomatis untuk UMKM Indonesia. Setup 5 menit, bot aktif 24/7.">
+<meta property="og:title" content="BotMatic — Chatbot WhatsApp untuk UMKM">
+<meta property="og:description" content="Bot AI yang menjawab customer WA otomatis, disesuaikan dengan bisnis kamu.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://botmatic-frontend.vercel.app/icon-512.png">
+<meta property="og:url" content="https://botmatic-frontend.vercel.app">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BotMatic — Chatbot WhatsApp untuk UMKM">
+<meta name="twitter:image" content="https://botmatic-frontend.vercel.app/icon-512.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  :root {
+    --bg:        #0a0a0a;
+    --bg2:       #111111;
+    --bg3:       #1a1a1a;
+    --border:    #222222;
+    --border2:   #2e2e2e;
+    --text:      #f0f0f0;
+    --text2:     #a0a0a0;
+    --text3:     #555555;
+    --green:     #00C853;
+    --green-dim: rgba(0,200,83,0.10);
+    --green-glow:rgba(0,200,83,0.22);
+    --red:       #ef4444;
+    --red-dim:   rgba(239,68,68,0.10);
+    --wa-bg:     #111b21;
+    --wa-in:     #202c33;
+    --wa-out:    #005c4b;
+    --radius:    14px;
+    --radius-sm: 8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ── LANDING ── */
+  #screen-landing {
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,200,83,0.07) 0%, transparent 55%), var(--bg);
+    align-items: center;
+    text-align: center;
+    padding: 48px 20px 80px;
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    justify-content: center;
+    margin-bottom: 52px;
+  }
+
+  .logo-icon {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--green), #00897B);
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  .logo-text { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--green); }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--green-dim);
+    border: 1px solid rgba(0,200,83,0.28);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: var(--green);
+    margin-bottom: 28px; letter-spacing: 0.2px;
+  }
+
+  .hero-title {
+    font-size: clamp(34px, 5.5vw, 68px);
+    font-weight: 900; line-height: 1.06;
+    letter-spacing: -2px; margin-bottom: 20px; max-width: 780px;
+  }
+
+  .hero-title .hl {
+    background: linear-gradient(135deg, var(--green), #00E5FF);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .hero-sub {
+    font-size: clamp(14px, 2vw, 17px); color: var(--text2);
+    max-width: 500px; line-height: 1.75; margin-bottom: 40px;
+  }
+
+  .hero-cta { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 52px; }
+
+  .hero-stats {
+    display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
+    margin-bottom: 60px; padding: 22px 32px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); max-width: 500px;
+  }
+
+  .stat-num { font-size: 26px; font-weight: 800; color: var(--green); letter-spacing: -1px; }
+  .stat-label { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .features-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px; max-width: 860px; width: 100%; margin: 0 auto 60px;
+  }
+
+  .feature-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; text-align: left;
+    transition: border-color 0.2s;
+  }
+
+  .feature-card:hover { border-color: var(--border2); }
+  .feature-icon { font-size: 24px; margin-bottom: 10px; }
+  .feature-title { font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+  .feature-desc { font-size: 12px; color: var(--text2); line-height: 1.65; }
+
+  /* WA demo mockup */
+  .demo-wrap { max-width: 292px; width: 100%; margin: 0 auto; }
+  .demo-label { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; text-align: center; margin-bottom: 12px; }
+
+  .phone-mockup { background: var(--wa-bg); border-radius: 18px; border: 1px solid var(--border2); overflow: hidden; }
+  .phone-header { background: #1f2c34; padding: 10px 12px; display: flex; align-items: center; gap: 9px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .phone-avatar { width: 30px; height: 30px; background: linear-gradient(135deg, var(--green), #00897B); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .phone-name { font-size: 12px; font-weight: 600; }
+  .phone-status { font-size: 10px; color: var(--green); }
+  .phone-body { padding: 11px; display: flex; flex-direction: column; gap: 7px; min-height: 190px; }
+  .msg { max-width: 88%; padding: 7px 10px; border-radius: 7px; font-size: 11.5px; line-height: 1.5; }
+  .msg-in  { background: var(--wa-in);  align-self: flex-start; border-radius: 0 7px 7px 7px; }
+  .msg-out { background: var(--wa-out); align-self: flex-end;   border-radius: 7px 0 7px 7px; }
+  .msg-time { font-size: 9px; color: rgba(255,255,255,0.35); text-align: right; margin-top: 1px; }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    background: var(--green); color: #000; border: none;
+    padding: 13px 30px; border-radius: 100px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    font-family: 'Inter', sans-serif; letter-spacing: -0.2px;
+  }
+
+  .btn-primary:hover { background: #00dd66; transform: translateY(-1px); box-shadow: 0 6px 20px var(--green-glow); }
+
+  .btn-secondary {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border2);
+    padding: 13px 30px; border-radius: 100px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .btn-secondary:hover { border-color: var(--text3); background: var(--bg2); }
+
+  /* ── ONBOARDING ── */
+  #screen-onboarding { background: var(--bg); align-items: center; padding: 0; }
+
+  .ob-header {
+    width: 100%; background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .ob-logo { font-size: 17px; font-weight: 800; flex-shrink: 0; }
+  .ob-logo span { color: var(--green); }
+
+  .ob-progress-wrap { flex: 1; max-width: 300px; margin: 0 auto; }
+  .ob-step-label { font-size: 10px; color: var(--text3); margin-bottom: 5px; font-weight: 500; }
+  .progress-bar { background: var(--bg3); border-radius: 100px; height: 3px; }
+  .progress-fill { background: var(--green); height: 3px; border-radius: 100px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+
+  .ob-body { flex: 1; width: 100%; max-width: 540px; margin: 0 auto; padding: 36px 24px 110px; }
+
+  .ob-step { display: none; }
+  .ob-step.active { display: block; animation: fadeUp 0.28s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-eyebrow { font-size: 10px; font-weight: 700; color: var(--green); letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 7px; }
+  .step-title   { font-size: 24px; font-weight: 800; letter-spacing: -0.7px; margin-bottom: 5px; }
+  .step-sub     { font-size: 13px; color: var(--text2); margin-bottom: 28px; line-height: 1.65; }
+
+  .form-group { margin-bottom: 18px; }
+
+  label {
+    display: block; font-size: 12px; font-weight: 600;
+    color: var(--text2); margin-bottom: 7px; letter-spacing: 0.1px;
+  }
+
+  input[type="text"],
+  input[type="tel"],
+  textarea,
+  select {
+    width: 100%; background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 11px 13px;
+    color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif;
+    outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+    -webkit-appearance: none; appearance: none;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px var(--green-dim);
+  }
+
+  input.has-error, textarea.has-error {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px var(--red-dim);
+  }
+
+  textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center;
+    padding-right: 34px; cursor: pointer;
+  }
+
+  select option { background: #1a1a1a; }
+
+  .field-error {
+    font-size: 11px; color: var(--red); margin-top: 5px;
+    display: none; align-items: center; gap: 4px;
+  }
+
+  .field-error.visible { display: flex; }
+
+  .hint { font-size: 11px; color: var(--text3); margin-top: 5px; display: flex; align-items: center; gap: 4px; line-height: 1.5; }
+  .char-count { font-size: 11px; color: var(--text3); text-align: right; margin-top: 4px; }
+
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  .chip {
+    padding: 7px 14px; border-radius: 100px;
+    border: 1px solid var(--border2); background: var(--bg2);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    transition: all 0.15s; user-select: none; line-height: 1.4;
+  }
+
+  .chip:hover { border-color: var(--green); color: var(--green); }
+  .chip.selected { background: var(--green-dim); border-color: var(--green); color: var(--green); font-weight: 600; }
+
+  /* Product list */
+  .product-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+
+  .product-item {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 11px;
+    display: grid; grid-template-columns: 1fr 120px auto; gap: 8px; align-items: center;
+  }
+
+  .product-item input { margin: 0; padding: 9px 11px; font-size: 13px; }
+
+  .btn-remove {
+    background: none; border: none; color: var(--text3);
+    cursor: pointer; font-size: 17px; padding: 2px 4px;
+    line-height: 1; transition: color 0.15s; font-family: 'Inter', sans-serif;
+  }
+
+  .btn-remove:hover { color: var(--red); }
+
+  .btn-add {
+    background: var(--bg2); border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm); padding: 11px; color: var(--text3);
+    font-size: 13px; cursor: pointer; width: 100%;
+    transition: border-color 0.18s, color 0.18s;
+    font-family: 'Inter', sans-serif; font-weight: 500;
+  }
+
+  .btn-add:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── AI UPLOAD PRODUK ── */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--bg2);
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: #7c3aed;
+    background: #7c3aed11;
+  }
+  .upload-zone .upload-icon { font-size: 28px; margin-bottom: 6px; }
+  .upload-zone .upload-title {
+    font-size: 14px; font-weight: 600; color: var(--text1);
+    margin-bottom: 3px;
+  }
+  .upload-zone .upload-sub {
+    font-size: 12px; color: var(--text3);
+    line-height: 1.4;
+  }
+  .upload-zone .upload-formats {
+    font-size: 11px; color: var(--text3);
+    margin-top: 8px; padding: 5px 10px;
+    background: var(--bg); border-radius: 20px;
+    display: inline-block;
+  }
+  #upload-file-input { display: none; }
+
+  .ai-loading-box {
+    display: none;
+    background: #7c3aed18;
+    border: 1px solid #7c3aed44;
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .ai-loading-box.show { display: block; }
+  .ai-loading-spinner {
+    width: 28px; height: 28px;
+    border: 3px solid #7c3aed33;
+    border-top-color: #7c3aed;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ai-loading-text { font-size: 13px; color: #a78bfa; font-weight: 600; }
+  .ai-loading-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+
+  .ai-result-box {
+    display: none;
+    background: #16a34a11;
+    border: 1px solid #22c55e44;
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .ai-result-box.show { display: block; }
+  .ai-result-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .ai-result-title { font-size: 13px; font-weight: 700; color: #4ade80; }
+  .ai-result-actions { display: flex; gap: 6px; }
+  .btn-ai-confirm {
+    background: #22c55e; color: #fff;
+    border: none; border-radius: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: opacity 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-ai-confirm:hover { opacity: 0.85; }
+  .btn-ai-retry {
+    background: var(--bg2); color: var(--text3);
+    border: 1px solid var(--border2); border-radius: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-ai-retry:hover { color: var(--text1); border-color: var(--text3); }
+  .ai-preview-table {
+    width: 100%; border-collapse: collapse; font-size: 12px;
+    max-height: 220px; overflow-y: auto; display: block;
+  }
+  .ai-preview-table th {
+    text-align: left; padding: 5px 8px;
+    color: var(--text3); font-weight: 600;
+    border-bottom: 1px solid var(--border2);
+    position: sticky; top: 0; background: #12171f;
+  }
+  .ai-preview-table td {
+    padding: 5px 8px; color: var(--text1);
+    border-bottom: 1px solid var(--border2);
+    vertical-align: top;
+  }
+  .ai-preview-table tr:last-child td { border-bottom: none; }
+  .ai-price-badge {
+    background: #22c55e22; color: #4ade80;
+    border-radius: 4px; padding: 1px 6px;
+    font-size: 11px; white-space: nowrap;
+  }
+  .ai-error-box {
+    display: none;
+    background: #ef444411;
+    border: 1px solid #ef444433;
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-size: 13px; color: #f87171;
+  }
+  .ai-error-box.show { display: block; }
+
+  .upload-divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 14px 0; color: var(--text3); font-size: 12px;
+  }
+  .upload-divider::before, .upload-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border2);
+  }
+
+  /* FAQ list */
+  .faq-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+
+  .faq-item {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); padding: 12px;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+
+  .faq-inputs { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .faq-inputs input { margin: 0; font-size: 13px; }
+  .faq-inputs textarea { margin: 0; min-height: 56px; font-size: 13px; }
+
+  /* Onboarding footer */
+  .ob-footer {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, var(--bg) 60%, transparent);
+    padding: 20px 24px 28px; display: flex; gap: 10px; justify-content: center;
+  }
+
+  .btn-back {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text2); padding: 12px 26px; border-radius: 100px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.18s; font-family: 'Inter', sans-serif;
+  }
+
+  .btn-back:hover { border-color: var(--text3); color: var(--text); }
+
+  .btn-next {
+    background: var(--green); color: #000; border: none;
+    padding: 12px 36px; border-radius: 100px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: background 0.18s, transform 0.15s;
+    font-family: 'Inter', sans-serif; min-width: 150px;
+  }
+
+  .btn-next:hover { background: #00dd66; transform: translateY(-1px); }
+
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  .section-label {
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 14px;
+  }
+
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 460px) { .input-row { grid-template-columns: 1fr; } }
+
+  /* Review cards */
+  .review-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 15px; margin-bottom: 10px;
+  }
+
+  .review-card-label {
+    font-size: 10px; color: var(--text3); font-weight: 700;
+    letter-spacing: 0.9px; text-transform: uppercase; margin-bottom: 8px;
+  }
+
+  .review-card-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+  .review-card-sub { font-size: 12px; color: var(--text2); line-height: 1.7; }
+
+  .gen-info-box {
+    background: var(--green-dim); border: 1px solid rgba(0,200,83,0.28);
+    border-radius: var(--radius); padding: 18px; margin-top: 20px;
+  }
+
+  .gen-info-box-title { font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+  .gen-info-box-list  { font-size: 12px; color: var(--text2); line-height: 2.1; }
+
+  /* ── GENERATING ── */
+  #screen-generating {
+    align-items: center; justify-content: center; text-align: center;
+    padding: 40px 20px;
+    background: radial-gradient(ellipse at 50% 45%, rgba(0,200,83,0.06) 0%, transparent 55%), var(--bg);
+  }
+
+  .gen-logo { font-size: 22px; font-weight: 800; margin-bottom: 52px; }
+  .gen-logo span { color: var(--green); }
+
+  .gen-orb {
+    width: 110px; height: 110px;
+    background: radial-gradient(circle, rgba(0,200,83,0.35) 0%, rgba(0,200,83,0.08) 50%, transparent 70%);
+    border-radius: 50%; margin: 0 auto 36px; position: relative;
+    animation: orbPulse 2s ease-in-out infinite;
+  }
+
+  .gen-orb::after {
+    content: '🤖'; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%); font-size: 40px;
+  }
+
+  @keyframes orbPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%       { transform: scale(1.07); opacity: 0.88; }
+  }
+
+  .gen-title { font-size: 26px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.7px; }
+  .gen-sub   { font-size: 14px; color: var(--text2); margin-bottom: 36px; }
+
+  .gen-steps { display: flex; flex-direction: column; gap: 10px; max-width: 340px; margin: 0 auto; width: 100%; }
+
+  .gen-step {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 15px; background: var(--bg2);
+    border-radius: var(--radius-sm); border: 1px solid var(--border);
+    font-size: 13px; color: var(--text3);
+    transition: color 0.3s, border-color 0.3s, background 0.3s; text-align: left;
+  }
+
+  .gen-step.active { color: var(--green); border-color: rgba(0,200,83,0.3); background: var(--green-dim); }
+  .gen-step.done   { color: var(--text2); border-color: var(--border2); }
+  .gen-step-icon   { font-size: 15px; width: 22px; text-align: center; flex-shrink: 0; }
+
+  .spin-ring {
+    width: 15px; height: 15px;
+    border: 2px solid rgba(0,200,83,0.25); border-top-color: var(--green);
+    border-radius: 50%; animation: spin 0.65s linear infinite; flex-shrink: 0;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── PREVIEW ── */
+  #screen-preview { background: var(--bg); padding: 0; }
+
+  .pv-header {
+    background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 13px 24px; display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .pv-logo { font-size: 17px; font-weight: 800; }
+  .pv-logo span { color: var(--green); }
+
+  .tag-live {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--green-dim); border: 1px solid rgba(0,200,83,0.28);
+    color: var(--green); font-size: 10px; font-weight: 700;
+    padding: 3px 9px; border-radius: 100px; letter-spacing: 0.3px;
+  }
+
+  .tag-live::before {
+    content: ''; width: 5px; height: 5px;
+    background: var(--green); border-radius: 50%;
+    animation: blink 1.5s ease-in-out infinite;
+  }
+
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .pv-body {
+    max-width: 980px; margin: 0 auto; padding: 26px 24px 32px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 22px;
+  }
+
+  @media (max-width: 680px) { .pv-body { grid-template-columns: 1fr; } }
+
+  .pv-section-title {
+    font-size: 10px; font-weight: 700; color: var(--text3);
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;
+  }
+
+  /* WA phone */
+  .wa-phone { background: var(--wa-bg); border-radius: 18px; border: 1px solid var(--border2); overflow: hidden; }
+
+  .wa-top-bar {
+    background: #1f2c34; padding: 11px 13px; display: flex; align-items: center;
+    gap: 9px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .wa-avatar {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--green), #00897B);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+
+  .wa-info { flex: 1; }
+  .wa-biz-name { font-size: 13px; font-weight: 600; }
+  .wa-online   { font-size: 10px; color: var(--green); }
+
+  .wa-chat-area { padding: 14px; display: flex; flex-direction: column; gap: 9px; min-height: 370px; background: #0d1418; }
+
+  .wa-msg { max-width: 86%; padding: 8px 11px; border-radius: 7px; font-size: 12.5px; line-height: 1.55; }
+  .wa-msg.in  { background: var(--wa-in);  align-self: flex-start; border-radius: 0 7px 7px 7px; }
+  .wa-msg.out { background: var(--wa-out); align-self: flex-end;   border-radius: 7px 0 7px 7px; }
+  .wa-msg-time { font-size: 9.5px; color: rgba(255,255,255,0.35); text-align: right; margin-top: 3px; }
+  .wa-check    { color: #53bdeb; }
+
+  .wa-input-bar {
+    background: #1f2c34; padding: 9px 11px; display: flex; align-items: center;
+    gap: 8px; border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .wa-input-fake { flex: 1; background: var(--wa-in); border-radius: 100px; padding: 8px 13px; font-size: 12px; color: var(--text3); }
+  .wa-send-btn   { width: 34px; height: 34px; background: var(--green); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+
+  /* Script panel */
+  .script-panel { display: flex; flex-direction: column; gap: 11px; }
+
+  .script-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 15px; transition: border-color 0.18s;
+  }
+
+  .script-card:hover { border-color: var(--border2); }
+
+  .script-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+
+  .script-tag {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.9px; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px;
+    background: var(--green-dim); color: var(--green);
+    border: 1px solid rgba(0,200,83,0.18);
+  }
+
+  .script-content { font-size: 12.5px; color: var(--text2); line-height: 1.72; white-space: pre-wrap; font-family: 'Inter', sans-serif; }
+
+  .copy-btn {
+    background: none; border: 1px solid var(--border2);
+    color: var(--text3); font-size: 10px; padding: 4px 9px;
+    border-radius: 5px; cursor: pointer; transition: all 0.15s;
+    font-family: 'Inter', sans-serif; font-weight: 500;
+  }
+
+  .copy-btn:hover  { border-color: var(--green); color: var(--green); }
+  .copy-btn.copied { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+
+  .pv-action-bar {
+    max-width: 980px; margin: 0 auto; padding: 0 24px 48px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+
+  .pv-action-text { font-size: 13px; color: var(--text2); flex: 1; }
+  .pv-action-text strong { color: var(--text); }
+
+  .btn-dl {
+    background: var(--bg2); border: 1px solid var(--border2);
+    color: var(--text2); padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all 0.18s; font-family: 'Inter', sans-serif;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  .btn-dl:hover { border-color: var(--green); color: var(--green); }
+
+  /* ── CONNECT ── */
+  #screen-connect { background: var(--bg); align-items: center; padding: 0; }
+
+  .cn-header {
+    width: 100%; background: var(--bg2); border-bottom: 1px solid var(--border);
+    padding: 14px 24px; display: flex; align-items: center; gap: 14px;
+    position: sticky; top: 0; z-index: 10;
+  }
+
+  .cn-logo { font-size: 17px; font-weight: 800; }
+  .cn-logo span { color: var(--green); }
+
+  .cn-body { width: 100%; max-width: 600px; margin: 0 auto; padding: 36px 24px 60px; }
+
+  .cn-title { font-size: 26px; font-weight: 800; letter-spacing: -0.7px; margin-bottom: 6px; }
+  .cn-sub   { font-size: 13px; color: var(--text2); margin-bottom: 32px; line-height: 1.7; }
+
+  /* Timeline */
+  .cn-steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 28px; }
+
+  .cn-step {
+    display: flex; gap: 14px; padding-bottom: 22px; position: relative;
+  }
+
+  .cn-step:not(:last-child)::before {
+    content: ''; position: absolute; left: 18px; top: 38px; bottom: 0;
+    width: 2px; background: var(--border2);
+  }
+
+  .cn-step-num {
+    width: 38px; height: 38px; background: var(--bg3);
+    border: 2px solid var(--border2); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; color: var(--text2); flex-shrink: 0;
+    transition: all 0.3s;
+  }
+
+  .cn-step.done .cn-step-num { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+
+  .cn-step-body { flex: 1; padding-top: 7px; }
+  .cn-step-h { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .cn-step-d { font-size: 12px; color: var(--text2); line-height: 1.65; }
+
+  /* Fonnte card */
+  .fonnte-card {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 18px;
+  }
+
+  .fonnte-card-title { font-size: 13px; font-weight: 700; margin-bottom: 3px; display: flex; align-items: center; gap: 7px; }
+  .fonnte-card-sub   { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+
+  /* QR */
+  .qr-wrap {
+    width: 168px; height: 168px; background: #fff; border-radius: 10px;
+    margin: 0 auto 12px; padding: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .qr-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 1.5px; width: 100%; height: 100%; }
+  .qc   { background: #1a1a1a; border-radius: 1px; aspect-ratio: 1; }
+  .qc.w { background: #f0f0f0; }
+
+  .qr-note    { font-size: 11px; color: var(--text3); text-align: center; margin-bottom: 3px; }
+  .qr-refresh { font-size: 11px; color: var(--green); cursor: pointer; text-align: center; display: block; background: none; border: none; font-family: 'Inter', sans-serif; }
+  .qr-refresh:hover { text-decoration: underline; }
+
+  /* Status card */
+  .status-card {
+    background: var(--bg2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 16px;
+    display: flex; align-items: center; gap: 13px; margin-bottom: 18px;
+    transition: border-color 0.4s, background 0.4s;
+  }
+
+  .status-card.connected { border-color: rgba(0,200,83,0.35); background: var(--green-dim); }
+
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.waiting   { background: #F97316; animation: blink 1.4s ease-in-out infinite; }
+  .status-dot.connected { background: var(--green); animation: none; }
+
+  .status-text { flex: 1; }
+  .status-h { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .status-d { font-size: 11px; color: var(--text3); }
+
+  .alert-info {
+    background: rgba(33,150,243,0.07); border: 1px solid rgba(33,150,243,0.18);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 12px; color: #90CAF9; line-height: 1.65;
+    display: flex; gap: 9px; margin-bottom: 16px;
+  }
+
+  .alert-icon { flex-shrink: 0; font-size: 14px; margin-top: 1px; }
+
+  .sim-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 8px; }
+
+  /* ── SUCCESS ── */
+  #screen-success {
+    align-items: center; justify-content: center;
+    text-align: center; padding: 48px 20px 60px;
+    background: radial-gradient(ellipse at 50% 25%, rgba(0,200,83,0.09) 0%, transparent 55%), var(--bg);
+  }
+
+  .success-icon { font-size: 66px; margin-bottom: 20px; display: block; animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+
+  @keyframes popIn { from { transform: scale(0.2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .success-title { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin-bottom: 8px; }
+  .success-sub   { font-size: 15px; color: var(--text2); max-width: 380px; line-height: 1.75; margin-bottom: 36px; }
+
+  .success-stats { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 34px; }
+
+  .success-stat {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 24px; min-width: 108px;
+  }
+
+  .success-stat-num   { font-size: 26px; font-weight: 800; color: var(--green); letter-spacing: -1px; }
+  .success-stat-label { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  .success-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; }
+
+  .next-steps-card {
+    max-width: 380px; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; text-align: left;
+  }
+
+  .next-steps-title { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 12px; }
+  .next-steps-list  { font-size: 12px; color: var(--text2); line-height: 2.1; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 480px) {
+    .product-item { grid-template-columns: 1fr auto; }
+    .hero-stats { gap: 22px; padding: 18px 20px; }
+    .ob-body { padding: 28px 16px 110px; }
+  }
+
+  /* ── AUTH SCREEN ── */
+  #screen-auth {
+    align-items: center; justify-content: center;
+    padding: 40px 20px;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,200,83,0.07) 0%, transparent 55%), var(--bg);
+  }
+
+  .auth-card {
+    width: 100%; max-width: 400px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 36px 32px;
+  }
+
+  .auth-logo { display: flex; align-items: center; gap: 8px; justify-content: center; margin-bottom: 28px; }
+  .auth-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--green), #00897B); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .auth-logo-text { font-size: 20px; font-weight: 800; }
+  .auth-logo-text span { color: var(--green); }
+
+  .auth-tabs { display: flex; background: var(--bg3); border-radius: var(--radius-sm); padding: 3px; margin-bottom: 28px; }
+  .auth-tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; font-weight: 600; border-radius: 6px; cursor: pointer; color: var(--text2); border: none; background: transparent; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+  .auth-tab.active { background: var(--bg2); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+  .auth-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+  .auth-sub { font-size: 13px; color: var(--text2); margin-bottom: 24px; line-height: 1.5; }
+
+  .auth-form .form-group { margin-bottom: 14px; }
+  .auth-form label { font-size: 12px; font-weight: 600; color: var(--text2); display: block; margin-bottom: 6px; }
+  .auth-form input {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border2);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'Inter', sans-serif; font-size: 14px;
+    padding: 11px 14px; outline: none; transition: border-color 0.2s;
+  }
+  .auth-form input:focus { border-color: var(--green); }
+  .auth-form input::placeholder { color: var(--text3); }
+
+  .auth-btn {
+    width: 100%; padding: 13px; background: var(--green);
+    color: #000; font-weight: 700; font-size: 14px;
+    border: none; border-radius: 100px; cursor: pointer;
+    font-family: 'Inter', sans-serif; margin-top: 6px;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .auth-btn:hover { background: #00dd66; transform: translateY(-1px); }
+  .auth-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .auth-error {
+    background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: var(--radius-sm); padding: 10px 13px;
+    font-size: 12px; color: #fc8181; margin-bottom: 14px; display: none;
+  }
+  .auth-error.show { display: block; }
+
+  .auth-divider { text-align: center; font-size: 11px; color: var(--text3); margin: 18px 0 14px; }
+
+  /* User badge di landing */
+  .user-badge {
+    position: fixed; top: 16px; right: 16px; z-index: 100;
+    display: none; align-items: center; gap: 8px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 100px; padding: 6px 14px 6px 10px;
+  }
+  .user-badge.show { display: flex; }
+  .user-avatar { width: 24px; height: 24px; background: linear-gradient(135deg, var(--green), #00897B); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #000; }
+  .user-email { font-size: 12px; color: var(--text2); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .logout-btn { font-size: 11px; color: var(--text3); cursor: pointer; padding: 2px 6px; border-radius: 4px; border: none; background: transparent; font-family: 'Inter', sans-serif; transition: color 0.2s; }
+  .logout-btn:hover { color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     USER BADGE (fixed, semua screen)
+══════════════════════════════════════ -->
+<div class="user-badge" id="user-badge">
+  <div class="user-avatar" id="user-avatar">?</div>
+  <span class="user-email" id="user-email-label">user@email.com</span>
+  <button class="logout-btn" onclick="doLogout()">Keluar</button>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: AUTH (Login / Daftar)
+══════════════════════════════════════ -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🤖</div>
+      <div class="auth-logo-text">Bot<span>Matic</span></div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Masuk</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Daftar</button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div id="auth-login">
+      <div class="auth-title">Selamat datang kembali</div>
+      <div class="auth-sub">Masuk untuk kelola chatbot bisnis kamu</div>
+      <div class="auth-error" id="login-error"></div>
+      <form class="auth-form" onsubmit="doLogin(event)">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="login-email" placeholder="email@bisnis.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="login-password" placeholder="Password kamu" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="auth-btn" id="login-btn">Masuk ke Dashboard</button>
+      </form>
+      <div class="auth-divider">Belum punya akun? <a href="#" onclick="switchAuthTab('register');return false;" style="color:var(--green);text-decoration:none;font-weight:600;">Daftar gratis</a></div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="auth-register" style="display:none">
+      <div class="auth-title">Buat akun gratis</div>
+      <div class="auth-sub">Setup chatbot bisnis kamu dalam 5 menit</div>
+      <div class="auth-error" id="register-error"></div>
+      <form class="auth-form" onsubmit="doRegister(event)">
+        <div class="form-group">
+          <label>Nama lengkap</label>
+          <input type="text" id="reg-name" placeholder="Nama kamu" autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="reg-email" placeholder="email@bisnis.com" autocomplete="email" required>
+        </div>
+        <div class="form-group">
+          <label>Password <span style="color:var(--text3);font-weight:400">(min. 6 karakter)</span></label>
+          <input type="password" id="reg-password" placeholder="Buat password" autocomplete="new-password" required minlength="6">
+        </div>
+        <button type="submit" class="auth-btn" id="register-btn">Daftar & Mulai Gratis</button>
+      </form>
+      <div class="auth-divider">Sudah punya akun? <a href="#" onclick="switchAuthTab('login');return false;" style="color:var(--green);text-decoration:none;font-weight:600;">Masuk</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: LANDING
+══════════════════════════════════════ -->
+<div id="screen-landing" class="screen">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <div class="logo-text">Bot<span>Matic</span></div>
+  </div>
+
+  <div class="hero-badge">🚀 Sekarang tersedia untuk UMKM Indonesia</div>
+
+  <h1 class="hero-title">
+    Chatbot WhatsApp<br>
+    <span class="hl">Otomatis 24 Jam</span><br>
+    untuk Bisnis Kamu
+  </h1>
+
+  <p class="hero-sub">
+    Isi data bisnis kamu dalam 5 menit. AI kami langsung buatkan chatbot yang balas pesan customer sesuai vibes brand kamu — tanpa coding, tanpa ribet.
+  </p>
+
+  <div class="hero-cta">
+    <button class="btn-primary" onclick="startOnboarding()">Mulai Gratis Sekarang →</button>
+    <button class="btn-secondary" onclick="scrollToDemo()">Lihat Contoh</button>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">5 mnt</div><div class="stat-label">waktu setup</div></div>
+    <div class="stat"><div class="stat-num">24/7</div><div class="stat-label">balas otomatis</div></div>
+    <div class="stat"><div class="stat-num">0</div><div class="stat-label">coding dibutuhkan</div></div>
+    <div class="stat"><div class="stat-num">100%</div><div class="stat-label">sesuai brand kamu</div></div>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🧠</div>
+      <div class="feature-title">AI yang Paham Bisnis Kamu</div>
+      <div class="feature-desc">Isi menu, produk, dan FAQ sekali. Bot langsung ngerti konteks bisnis dan jawab customer dengan natural.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <div class="feature-title">Terhubung ke WhatsApp Bisnis</div>
+      <div class="feature-desc">Scan QR satu kali, bot aktif di nomor WA kamu. Tidak perlu aplikasi tambahan.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎨</div>
+      <div class="feature-title">Sesuai Vibes Brand Kamu</div>
+      <div class="feature-desc">Santai, formal, atau fun — bot bicara seperti kamu, bukan seperti robot.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📥</div>
+      <div class="feature-title">Script Siap Pakai + Download</div>
+      <div class="feature-desc">Semua script bisa langsung disalin atau didownload. Tempel ke Fonnte, bot langsung hidup.</div>
+    </div>
+  </div>
+
+  <!-- Demo WA mockup -->
+  <div class="demo-wrap" id="demo-section">
+    <div class="demo-label">Contoh Chat Otomatis</div>
+    <div class="phone-mockup">
+      <div class="phone-header">
+        <div class="phone-avatar">🍜</div>
+        <div>
+          <div class="phone-name">Warung Bu Sari</div>
+          <div class="phone-status">● online</div>
+        </div>
+      </div>
+      <div class="phone-body">
+        <div class="msg msg-in">Halo kak, masih buka? Ada menu apa?<div class="msg-time">12:03</div></div>
+        <div class="msg msg-out">Halo Kak! Masih buka sampai jam 9 malam 😊<br><br>Menu hari ini:<br>🍜 Mie Ayam — Rp 15.000<br>🍚 Nasi Goreng — Rp 18.000<br>🥘 Soto Ayam — Rp 16.000<br><br>Mau order yang mana? ✨<div class="msg-time">12:03 ✓✓</div></div>
+        <div class="msg msg-in">Nasi goreng 2, delivery dong<div class="msg-time">12:04</div></div>
+        <div class="msg msg-out">Siap Kak! 🙌<br>2× Nasi Goreng = Rp 36.000<br>Ongkir = Rp 5.000<br>Total: <strong>Rp 41.000</strong><br><br>Balas "YA" untuk konfirmasi 👍<div class="msg-time">12:04 ✓✓</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:72px"></div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN: ONBOARDING
+══════════════════════════════════════ -->
+<div id="screen-onboarding" class="screen">
+  <div class="ob-header">
+    <div class="ob-logo">Bot<span>Matic</span></div>
+    <div class="ob-progress-wrap">
+      <div class="ob-step-label">Langkah <span id="step-current">1</span> dari 5</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:20%"></div></div>
+    </div>
+  </div>
+
+  <div class="ob-body">
+
+    <!-- ── STEP 1: Info Bisnis ── -->
+    <div class="ob-step active" id="step-1">
+      <div class="step-eyebrow">Langkah 1 / 5</div>
+      <h2 class="step-title">Info Bisnis Kamu</h2>
+      <p class="step-sub">Ceritain bisnis kamu biar AI bisa kenalan dulu 😊</p>
+
+      <div class="form-group">
+        <label>Nama Bisnis <span style="color:var(--red)">*</span></label>
+        <input type="text" id="biz-name" placeholder="contoh: Warung Makan Bu Sari, Toko Kue Manis...">
+        <div class="field-error" id="err-biz-name">⚠ Nama bisnis wajib diisi</div>
+      </div>
+
+      <div class="form-group">
+        <label>Jenis Usaha <span style="color:var(--red)">*</span></label>
+        <div class="chips" id="biz-type-chips">
+          <div class="chip" data-val="kuliner">🍜 Kuliner / FnB</div>
+          <div class="chip" data-val="fashion">👗 Fashion</div>
+          <div class="chip" data-val="kecantikan">💄 Kecantikan</div>
+          <div class="chip" data-val="jasa">🔧 Jasa / Service</div>
+          <div class="chip" data-val="retail">🛍️ Retail / Toko</div>
+          <div class="chip" data-val="pendidikan">📚 Pendidikan</div>
+          <div class="chip" data-val="kesehatan">🏥 Kesehatan</div>
+          <div class="chip" data-val="lainnya">✨ Lainnya</div>
+        </div>
+        <input type="hidden" id="biz-type" value="">
+        <div class="field-error" id="err-biz-type">⚠ Pilih jenis usaha terlebih dahulu</div>
+      </div>
+
+      <div class="input-row">
+        <div class="form-group" style="margin:0">
+          <label>Kota / Daerah <span style="color:var(--red)">*</span></label>
+          <input type="text" id="biz-city" placeholder="Surabaya, Jakarta Selatan...">
+          <div class="field-error" id="err-biz-city">⚠ Masukkan kota bisnis kamu</div>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>No. WhatsApp Bisnis <span style="color:var(--red)">*</span></label>
+          <input type="tel" id="biz-wa" placeholder="08xxxxxxxxxx">
+          <div class="field-error" id="err-biz-wa">⚠ Masukkan nomor WA bisnis</div>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:4px;margin-bottom:16px">💡 Nomor ini yang akan dipasangi chatbot</div>
+
+      <div class="form-group" style="margin-bottom:0">
+        <label>Instagram Bisnis <span style="color:var(--text3);font-weight:400">(opsional)</span></label>
+        <input type="text" id="biz-ig" placeholder="@namabisnis">
+      </div>
+    </div>
+
+    <!-- ── STEP 2: Produk & Menu ── -->
+    <div class="ob-step" id="step-2">
+      <div class="step-eyebrow">Langkah 2 / 5</div>
+      <h2 class="step-title">Produk & Layanan</h2>
+      <p class="step-sub">Masukin produk atau menu unggulan kamu. Bot akan tahu apa yang dijual dan berapa harganya.</p>
+
+      <!-- ── AI UPLOAD ZONE ── -->
+      <input type="file" id="upload-file-input" accept=".jpg,.jpeg,.png,.webp,.pdf,.csv,.xlsx,.xls,.txt" onchange="handleFileUpload(this.files[0])">
+
+      <div class="upload-zone" id="upload-zone"
+           onclick="document.getElementById('upload-file-input').click()"
+           ondragover="event.preventDefault(); this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="event.preventDefault(); this.classList.remove('drag-over'); handleFileUpload(event.dataTransfer.files[0])">
+        <div class="upload-icon">🤖</div>
+        <div class="upload-title">Upload menu/katalog → AI baca otomatis</div>
+        <div class="upload-sub">Foto menu, PDF price list, atau file Excel — AI akan ekstrak semua produk & harga secara otomatis</div>
+        <div class="upload-formats">JPG · PNG · PDF · Excel · CSV</div>
+      </div>
+
+      <!-- Loading state -->
+      <div class="ai-loading-box" id="ai-loading-box">
+        <div class="ai-loading-spinner"></div>
+        <div class="ai-loading-text">🧠 AI sedang membaca file kamu...</div>
+        <div class="ai-loading-sub" id="ai-loading-sub">Menganalisis produk dan harga</div>
+      </div>
+
+      <!-- Error state -->
+      <div class="ai-error-box" id="ai-error-box"></div>
+
+      <!-- Preview hasil AI -->
+      <div class="ai-result-box" id="ai-result-box">
+        <div class="ai-result-header">
+          <div class="ai-result-title" id="ai-result-title">✅ AI menemukan 0 produk</div>
+          <div class="ai-result-actions">
+            <button class="btn-ai-retry" onclick="resetUpload()">↩ Upload Ulang</button>
+            <button class="btn-ai-confirm" onclick="confirmAiProducts()">Gunakan Semua ✓</button>
+          </div>
+        </div>
+        <table class="ai-preview-table" id="ai-preview-table">
+          <thead><tr><th>#</th><th>Nama Produk</th><th>Harga</th><th>Deskripsi</th></tr></thead>
+          <tbody id="ai-preview-body"></tbody>
+        </table>
+      </div>
+
+      <div class="upload-divider">atau isi manual</div>
+
+      <!-- Manual input list -->
+      <div class="product-list" id="product-list">
+        <div class="product-item">
+          <input type="text"  class="prod-name"  placeholder="Nama produk (contoh: Nasi Goreng Spesial)">
+          <input type="text"  class="prod-price" placeholder="Harga (25.000)">
+          <button class="btn-remove" onclick="removeProduct(this)">×</button>
+        </div>
+        <div class="product-item">
+          <input type="text"  class="prod-name"  placeholder="Nama produk">
+          <input type="text"  class="prod-price" placeholder="Harga">
+          <button class="btn-remove" onclick="removeProduct(this)">×</button>
+        </div>
+        <div class="product-item">
+          <input type="text"  class="prod-name"  placeholder="Nama produk">
+          <input type="text"  class="prod-price" placeholder="Harga">
+          <button class="btn-remove" onclick="removeProduct(this)">×</button>
+        </div>
+      </div>
+      <button class="btn-add" onclick="addProduct()">+ Tambah Produk / Menu</button>
+      <div class="field-error" id="err-products" style="margin-top:6px">⚠ Tambahkan minimal 1 produk</div>
+
+      <div class="divider"></div>
+
+      <div class="form-group">
+        <label>Deskripsi Singkat Bisnis <span style="color:var(--text3);font-weight:400">(opsional)</span></label>
+        <textarea id="biz-desc" maxlength="300" placeholder="contoh: Kami menjual makanan rumahan dengan bahan segar setiap hari. Sudah melayani pelanggan sejak 2018..."></textarea>
+        <div class="char-count"><span id="desc-count">0</span>/300</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0">
+        <label>Cara Order <span style="color:var(--text3);font-weight:400">(pilih semua yang berlaku)</span></label>
+        <div class="chips" id="order-chips">
+          <div class="chip selected" data-val="wa">💬 Chat WA</div>
+          <div class="chip" data-val="shopee">🛒 Shopee</div>
+          <div class="chip" data-val="tokopedia">🟢 Tokopedia</div>
+          <div class="chip" data-val="gofood">🟠 GoFood</div>
+          <div class="chip" data-val="grab">💚 GrabFood</div>
+          <div class="chip" data-val="langsung">🏪 Datang Langsung</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Brand Voice ── -->
+    <div class="ob-step" id="step-3">
+      <div class="step-eyebrow">Langkah 3 / 5</div>
+      <h2 class="step-title">Karakter & Gaya Bicara</h2>
+      <p class="step-sub">Pilih gimana bot kamu ngomong ke customer. Ini yang bikin chatbot kamu beda dari yang lain!</p>
+
+      <div class="form-group">
+        <label>Gaya Bahasa Bot <span style="color:var(--red)">*</span></label>
+        <div class="chips" id="voice-chips">
+          <div class="chip" data-val="santai">😊 Santai & Ramah<br><small style="font-size:10px;color:var(--text3);font-weight:400">Pakai "kak", casual, friendly</small></div>
+          <div class="chip" data-val="formal">👔 Formal & Profesional<br><small style="font-size:10px;color:var(--text3);font-weight:400">Pakai "Bapak/Ibu", sopan</small></div>
+          <div class="chip" data-val="gaul">🔥 Gaul & Energik<br><small style="font-size:10px;color:var(--text3);font-weight:400">Kata-kata kekinian, hype</small></div>
+          <div class="chip" data-val="mewah">✨ Eksklusif & Elegan<br><small style="font-size:10px;color:var(--text3);font-weight:400">Tone premium, berkelas</small></div>
+        </div>
+        <input type="hidden" id="brand-voice" value="">
+        <div class="field-error" id="err-brand-voice">⚠ Pilih gaya bicara bot kamu</div>
+      </div>
+
+      <div class="form-group">
+        <label>Nama Bot / Karakter <span style="color:var(--text3);font-weight:400">(opsional)</span></label>
+        <input type="text" id="bot-name" placeholder="contoh: Sari, Rafi, Admin, dll">
+        <div class="hint">💡 Nama yang dipakai bot saat memperkenalkan diri</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:0">
+        <label>Paket Emoji</label>
+        <div class="chips" id="emoji-chips">
+          <div class="chip selected" data-val="✅🙏😊">✅🙏😊 Hangat</div>
+          <div class="chip" data-val="🔥💪✨">🔥💪✨ Energik</div>
+          <div class="chip" data-val="💎🌟🏆">💎🌟🏆 Premium</div>
+          <div class="chip" data-val="🌿💚🌱">🌿💚🌱 Natural</div>
+          <div class="chip" data-val="">Tanpa Emoji</div>
+        </div>
+        <input type="hidden" id="emoji-style" value="✅🙏😊">
+      </div>
+    </div>
+
+    <!-- ── STEP 4: Operasional & FAQ ── -->
+    <div class="ob-step" id="step-4">
+      <div class="step-eyebrow">Langkah 4 / 5</div>
+      <h2 class="step-title">Jam Buka & FAQ</h2>
+      <p class="step-sub">Info operasional dan pertanyaan yang sering ditanya customer. Bot jawab ini secara otomatis.</p>
+
+      <div class="section-label">Jam Operasional</div>
+
+      <div class="input-row" style="margin-bottom:14px">
+        <div class="form-group" style="margin:0">
+          <label>Jam Buka</label>
+          <input type="text" id="open-time" placeholder="contoh: 08.00">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Jam Tutup</label>
+          <input type="text" id="close-time" placeholder="contoh: 21.00">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Hari Operasional <span style="color:var(--text3);font-weight:400">(pilih semua yang berlaku)</span></label>
+        <div class="chips" id="days-chips">
+          <div class="chip selected" data-val="Senin">Sen</div>
+          <div class="chip selected" data-val="Selasa">Sel</div>
+          <div class="chip selected" data-val="Rabu">Rab</div>
+          <div class="chip selected" data-val="Kamis">Kam</div>
+          <div class="chip selected" data-val="Jumat">Jum</div>
+          <div class="chip" data-val="Sabtu">Sab</div>
+          <div class="chip" data-val="Minggu">Min</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Info Lokasi / Alamat <span style="color:var(--text3);font-weight:400">(opsional)</span></label>
+        <input type="text" id="biz-address" placeholder="contoh: Jl. Sudirman No. 12, Jakarta Selatan">
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-label">FAQ — Pertanyaan yang Sering Ditanya</div>
+
+      <div class="faq-list" id="faq-list">
+        <div class="faq-item">
+          <div class="faq-inputs">
+            <input type="text" class="faq-q" placeholder="Pertanyaan (contoh: Apakah ada delivery?)">
+            <textarea class="faq-a" placeholder="Jawaban (contoh: Iya, kami melayani delivery area kota dengan ongkir Rp 10.000)"></textarea>
+          </div>
+          <button class="btn-remove" onclick="removeFaq(this)">×</button>
+        </div>
+        <div class="faq-item">
+          <div class="faq-inputs">
+            <input type="text" class="faq-q" placeholder="Pertanyaan">
+            <textarea class="faq-a" placeholder="Jawaban"></textarea>
+          </div>
+          <button class="btn-remove" onclick="removeFaq(this)">×</button>
+        </div>
+      </div>
+      <button class="btn-add" onclick="addFaq()">+ Tambah FAQ</button>
+    </div>
+
+    <!-- ── STEP 5: Review ── -->
+    <div class="ob-step" id="step-5">
+      <div class="step-eyebrow">Langkah 5 / 5</div>
+      <h2 class="step-title">Review & Generate 🚀</h2>
+      <p class="step-sub">Cek sekali lagi sebelum AI membuatkan chatbot kamu.</p>
+
+      <div id="review-content"></div>
+
+      <div class="gen-info-box">
+        <div class="gen-info-box-title">🤖 AI akan membuatkan untuk kamu:</div>
+        <div class="gen-info-box-list">
+          ✅ Pesan sambutan otomatis yang sesuai brand<br>
+          ✅ Respons produk & menu yang informatif<br>
+          ✅ Alur pemesanan step-by-step<br>
+          ✅ Info operasional yang akurat<br>
+          ✅ Jawaban FAQ yang natural<br>
+          ✅ Pesan follow-up yang convert
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ob-body -->
+
+  <div class="ob-footer">
+    <button class="btn-back" id="btn-back" onclick="prevStep()" style="display:none">← Kembali</button>
+    <button class="btn-next" id="btn-next" onclick="nextStep()">Lanjut →</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN: GENERATING
+══════════════════════════════════════ -->
+<div id="screen-generating" class="screen">
+  <div class="gen-logo">Bot<span>Matic</span></div>
+  <div class="gen-orb"></div>
+  <h2 class="gen-title">AI Sedang Bekerja...</h2>
+  <p class="gen-sub" id="gen-biz-name">Membuatkan chatbot yang sempurna untuk bisnis kamu</p>
+
+  <div class="gen-steps">
+    <div class="gen-step" id="gen-s1"><div class="gen-step-icon">📋</div><span>Menganalisis profil bisnis</span></div>
+    <div class="gen-step" id="gen-s2"><div class="gen-step-icon">🧠</div><span>Memproses data produk & FAQ</span></div>
+    <div class="gen-step" id="gen-s3"><div class="gen-step-icon">🎨</div><span>Menyesuaikan brand voice</span></div>
+    <div class="gen-step" id="gen-s4"><div class="gen-step-icon">✍️</div><span>Menulis script chatbot custom</span></div>
+    <div class="gen-step" id="gen-s5"><div class="gen-step-icon">⚡</div><span>Finalisasi & optimasi</span></div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN: PREVIEW
+══════════════════════════════════════ -->
+<div id="screen-preview" class="screen">
+  <div class="pv-header">
+    <div class="pv-logo">Bot<span>Matic</span></div>
+    <div class="tag-live">LIVE PREVIEW</div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn-dl" onclick="downloadAllScripts()">⬇ Download Script</button>
+      <button class="btn-primary" style="padding:9px 18px;font-size:12px" onclick="goToConnect()">Hubungkan ke WA →</button>
+    </div>
+  </div>
+
+  <div class="pv-body">
+    <div>
+      <div class="pv-section-title">Preview WhatsApp Bot</div>
+      <div class="wa-phone">
+        <div class="wa-top-bar">
+          <div class="wa-avatar" id="pv-avatar">🤖</div>
+          <div class="wa-info">
+            <div class="wa-biz-name" id="pv-biz-name">Nama Bisnis</div>
+            <div class="wa-online">● online sekarang</div>
+          </div>
+        </div>
+        <div class="wa-chat-area" id="pv-chat"></div>
+        <div class="wa-input-bar">
+          <div class="wa-input-fake">Tulis pesan...</div>
+          <div class="wa-send-btn">▶</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="pv-section-title">Script yang Dihasilkan AI</div>
+      <div class="script-panel" id="script-panel"></div>
+    </div>
+  </div>
+
+  <div class="pv-action-bar">
+    <div class="pv-action-text">
+      <strong>Chatbot kamu sudah siap!</strong> Langkah berikutnya: hubungkan ke nomor WhatsApp bisnis kamu dengan scan QR.
+    </div>
+    <button class="btn-primary" onclick="goToConnect()">Hubungkan ke WhatsApp →</button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN: CONNECT
+══════════════════════════════════════ -->
+<div id="screen-connect" class="screen">
+  <div class="cn-header">
+    <div class="cn-logo">Bot<span>Matic</span></div>
+    <div class="tag-live">LANGKAH TERAKHIR</div>
+  </div>
+
+  <div class="cn-body">
+    <h2 class="cn-title">Hubungkan WhatsApp Kamu 📱</h2>
+    <p class="cn-sub">Scan QR Code di bawah pakai WhatsApp bisnis kamu. Setelah terhubung, bot langsung aktif melayani customer 24 jam.</p>
+
+    <div class="fonnte-card">
+      <div class="fonnte-card-title">
+        <span>📲</span> Koneksi via WhatsApp
+        <span style="font-size:10px;font-weight:500;color:var(--text3);margin-left:auto">Gratis · Powered by Baileys</span>
+      </div>
+      <div class="fonnte-card-sub">Scan QR Code ini dengan WhatsApp nomor bisnis kamu</div>
+
+      <div class="qr-wrap"><div class="qr-grid" id="qr-grid"></div></div>
+      <div class="qr-note" id="qr-note">QR aktif selama 60 detik</div>
+      <button class="qr-refresh" onclick="refreshQR()">🔄 Refresh QR</button>
+    </div>
+
+    <div class="status-card" id="status-card">
+      <div class="status-dot waiting" id="status-dot"></div>
+      <div class="status-text">
+        <div class="status-h" id="status-h">Menunggu Koneksi...</div>
+        <div class="status-d" id="status-d">Scan QR code dengan WhatsApp nomor bisnis kamu</div>
+      </div>
+    </div>
+
+    <div class="alert-info">
+      <div class="alert-icon">ℹ️</div>
+      <div>Buka WhatsApp di HP → Ketuk <strong>⋮</strong> → <strong>Perangkat Tertaut</strong> → <strong>Tautkan Perangkat</strong> → Scan QR di atas.</div>
+    </div>
+
+    <div class="cn-steps">
+      <div class="cn-step done">
+        <div class="cn-step-num">✓</div>
+        <div class="cn-step-body">
+          <div class="cn-step-h">Data Bisnis Tersimpan</div>
+          <div class="cn-step-d">Profil bisnis, produk, dan brand voice sudah lengkap.</div>
+        </div>
+      </div>
+      <div class="cn-step done">
+        <div class="cn-step-num">✓</div>
+        <div class="cn-step-body">
+          <div class="cn-step-h">Script Chatbot Selesai</div>
+          <div class="cn-step-d">AI sudah generate 6 jenis respons yang disesuaikan dengan bisnis kamu.</div>
+        </div>
+      </div>
+      <div class="cn-step" id="cn-s3">
+        <div class="cn-step-num">3</div>
+        <div class="cn-step-body">
+          <div class="cn-step-h">Hubungkan WhatsApp</div>
+          <div class="cn-step-d">Scan QR code di atas menggunakan nomor WA bisnis kamu.</div>
+        </div>
+      </div>
+      <div class="cn-step" id="cn-s4">
+        <div class="cn-step-num">4</div>
+        <div class="cn-step-body">
+          <div class="cn-step-h">Bot Aktif & Siap Melayani</div>
+          <div class="cn-step-d">Setelah terhubung, bot langsung merespons customer 24/7.</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-connect" style="width:100%;display:none" onclick="simulateConnect()">
+      ✅ Saya Sudah Scan QR
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     SCREEN: SUCCESS
+══════════════════════════════════════ -->
+<div id="screen-success" class="screen">
+  <div class="logo">
+    <div class="logo-icon">🤖</div>
+    <div class="logo-text">Bot<span>Matic</span></div>
+  </div>
+
+  <span class="success-icon">🎉</span>
+  <h2 class="success-title">Bot Kamu Aktif!</h2>
+  <p class="success-sub" id="success-msg">Chatbot WhatsApp untuk <strong>bisnis kamu</strong> sudah aktif dan siap melayani customer 24 jam sehari, 7 hari seminggu.</p>
+
+  <div class="success-stats">
+    <div class="success-stat"><div class="success-stat-num">24/7</div><div class="success-stat-label">Bot aktif</div></div>
+    <div class="success-stat"><div class="success-stat-num">&lt;3s</div><div class="success-stat-label">Respons rata-rata</div></div>
+    <div class="success-stat"><div class="success-stat-num">∞</div><div class="success-stat-label">Chat serentak</div></div>
+  </div>
+
+  <div class="success-actions">
+    <button class="btn-primary" onclick="downloadAllScripts()">⬇ Download Semua Script</button>
+    <button class="btn-secondary" onclick="restartApp()">← Setup Bisnis Lain</button>
+  </div>
+
+  <div class="next-steps-card">
+    <div class="next-steps-title">📋 Langkah selanjutnya:</div>
+    <div class="next-steps-list">
+      ✅ Kirim pesan test ke WA bisnis kamu<br>
+      ✅ Bot otomatis membalas pesan customer 24/7<br>
+      ✅ Share nomor WA ke IG bio, Google Maps, dll<br>
+      ✅ Pantau performa bot dalam 24 jam pertama
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ── AUTH STATE ───────────────────────────────────────────────
+let _authToken = null;
+let _authUser  = null;
+
+// ── STATE ────────────────────────────────────────────────────
+let currentStep = 1;
+const TOTAL = 5;
+
+const S = {
+  bizName:'', bizType:'', bizCity:'', bizWa:'', bizIg:'',
+  bizDesc:'', orderMethod:[], brandVoice:'', botName:'',
+  emojiStyle:'✅🙏😊', openTime:'', closeTime:'',
+  operDays:['Senin','Selasa','Rabu','Kamis','Jumat'],
+  bizAddress:'', products:[], faqs:[], scripts:{}
+};
+
+// ── SCREENS ──────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0 });
+}
+
+function startOnboarding() { show('screen-onboarding'); updateUI(); }
+function goToConnect()     { show('screen-connect'); generateQR(); }
+
+// ── AUTH UI ──────────────────────────────────────────────────
+function switchAuthTab(tab) {
+  document.getElementById('auth-login').style.display    = tab === 'login'    ? '' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',    tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+}
+
+function setAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.classList.toggle('show', !!msg);
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  setAuthError('login-error', '');
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true; btn.textContent = 'Memproses...';
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email:    document.getElementById('login-email').value.trim(),
+        password: document.getElementById('login-password').value
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) { setAuthError('login-error', data.error || 'Login gagal'); return; }
+    onAuthSuccess(data);
+  } catch (err) {
+    setAuthError('login-error', 'Tidak dapat terhubung ke server. Coba lagi.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Masuk ke Dashboard';
+  }
+}
+
+async function doRegister(e) {
+  e.preventDefault();
+  setAuthError('register-error', '');
+  const btn = document.getElementById('register-btn');
+  btn.disabled = true; btn.textContent = 'Membuat akun...';
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email:    document.getElementById('reg-email').value.trim(),
+        password: document.getElementById('reg-password').value,
+        fullName: document.getElementById('reg-name').value.trim()
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) { setAuthError('register-error', data.error || 'Pendaftaran gagal'); return; }
+    onAuthSuccess(data);
+  } catch (err) {
+    setAuthError('register-error', 'Tidak dapat terhubung ke server. Coba lagi.');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Daftar & Mulai Gratis';
+  }
+}
+
+function onAuthSuccess(data) {
+  _authToken = data.session?.access_token;
+  _authUser  = data.user;
+
+  // Update user badge
+  const email = _authUser?.email || '';
+  const initial = email.charAt(0).toUpperCase();
+  document.getElementById('user-avatar').textContent = initial;
+  document.getElementById('user-email-label').textContent = email;
+  document.getElementById('user-badge').classList.add('show');
+
+  // Cek apakah user sudah punya bisnis
+  checkUserBusiness();
+}
+
+async function checkUserBusiness() {
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/auth/me`, {
+      headers: { 'Authorization': `Bearer ${_authToken}` }
+    });
+    const data = await resp.json();
+    if (data.businesses && data.businesses.length > 0) {
+      // Sudah punya bisnis → langsung ke dashboard (gunakan bisnis pertama)
+      S.businessId = data.businesses[0].id;
+      show('screen-success');
+      document.getElementById('success-msg').innerHTML =
+        `Bot WhatsApp untuk <strong>${data.businesses[0].name}</strong> sudah aktif dan melayani customer 24/7.`;
+    } else {
+      // Belum punya bisnis → ke landing untuk mulai onboarding
+      show('screen-landing');
+    }
+  } catch (err) {
+    show('screen-landing');
+  }
+}
+
+async function doLogout() {
+  try {
+    if (_authToken) {
+      await fetch(`${BACKEND_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${_authToken}` }
+      });
+    }
+  } catch (_) {}
+  _authToken = null;
+  _authUser  = null;
+  document.getElementById('user-badge').classList.remove('show');
+  show('screen-auth');
+}
+
+function scrollToDemo() {
+  document.getElementById('demo-section')?.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+function restartApp() {
+  if (confirm('Reset semua data dan mulai dari awal?')) location.reload();
+}
+
+// ── CHIPS ────────────────────────────────────────────────────
+function initChips(cid, hid, multi) {
+  const c = document.getElementById(cid);
+  if (!c) return;
+  c.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      if (!multi) {
+        c.querySelectorAll('.chip').forEach(x => x.classList.remove('selected'));
+        chip.classList.add('selected');
+        if (hid) document.getElementById(hid).value = chip.dataset.val;
+      } else {
+        chip.classList.toggle('selected');
+      }
+    });
+  });
+}
+
+// ── PRODUCT LIST ─────────────────────────────────────────────
+function addProduct(name = '', price = '') {
+  const list = document.getElementById('product-list');
+  const d = document.createElement('div');
+  d.className = 'product-item';
+  d.innerHTML = `
+    <input type="text" class="prod-name"  placeholder="Nama produk" value="${esc(name)}">
+    <input type="text" class="prod-price" placeholder="Harga" value="${esc(price)}">
+    <button class="btn-remove" onclick="removeProduct(this)">×</button>`;
+  list.appendChild(d);
+  if (!name) d.querySelector('input').focus();
+  return d;
+}
+
+function removeProduct(btn) {
+  const list = document.getElementById('product-list');
+  if (list.children.length > 1) btn.closest('.product-item').remove();
+}
+
+// ── AI UPLOAD PRODUK ──────────────────────────────────────────
+let _aiExtractedProducts = [];
+
+async function handleFileUpload(file) {
+  if (!file) return;
+
+  // Validasi ukuran
+  if (file.size > 10 * 1024 * 1024) {
+    showAiError('File terlalu besar. Maksimal 10MB.');
+    return;
+  }
+
+  // Reset state
+  showEl('ai-loading-box', true);
+  showEl('ai-result-box', false);
+  showEl('ai-error-box', false);
+  document.getElementById('upload-zone').style.display = 'none';
+
+  // Animasi teks loading
+  const loadingTexts = [
+    'Menganalisis produk dan harga...',
+    'Membaca nama produk...',
+    'Mendeteksi harga...',
+    'Menyusun daftar produk...'
+  ];
+  let ltIdx = 0;
+  const ltInterval = setInterval(() => {
+    document.getElementById('ai-loading-sub').textContent = loadingTexts[ltIdx % loadingTexts.length];
+    ltIdx++;
+  }, 1500);
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const resp = await fetch(`${BACKEND_URL}/api/extract-products`, {
+      method: 'POST',
+      body: formData
+      // Headers sudah di-inject oleh fetch wrapper (Authorization + ngrok)
+      // Tapi Content-Type TIDAK di-set manual agar multipart boundary otomatis
+    });
+
+    clearInterval(ltInterval);
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      showAiError(data.error || 'Gagal memproses file. Coba lagi.');
+      return;
+    }
+
+    if (!data.products || data.products.length === 0) {
+      showAiError('AI tidak menemukan produk dalam file ini. Pastikan file berisi daftar produk yang jelas.');
+      return;
+    }
+
+    _aiExtractedProducts = data.products;
+    showAiResult(data);
+
+  } catch (err) {
+    clearInterval(ltInterval);
+    showAiError('Koneksi gagal. Pastikan backend berjalan dan coba lagi.');
+    console.error('Upload error:', err);
+  } finally {
+    showEl('ai-loading-box', false);
+    // Reset file input agar bisa upload file sama lagi
+    document.getElementById('upload-file-input').value = '';
+  }
+}
+
+function showAiError(msg) {
+  showEl('ai-loading-box', false);
+  showEl('ai-result-box', false);
+  showEl('ai-error-box', true);
+  document.getElementById('ai-error-box').textContent = '⚠ ' + msg;
+  document.getElementById('upload-zone').style.display = '';
+}
+
+function showAiResult(data) {
+  showEl('ai-result-box', true);
+  document.getElementById('ai-result-title').textContent =
+    `✅ AI menemukan ${data.products.length} produk dari "${data.filename}"`;
+
+  const tbody = document.getElementById('ai-preview-body');
+  tbody.innerHTML = '';
+  data.products.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    const priceFormatted = p.price
+      ? `<span class="ai-price-badge">${esc(p.price)}</span>`
+      : '<span style="color:var(--text3)">—</span>';
+    tr.innerHTML = `
+      <td style="color:var(--text3)">${i + 1}</td>
+      <td><strong>${esc(p.name)}</strong></td>
+      <td>${priceFormatted}</td>
+      <td style="color:var(--text3)">${esc(p.description || '—')}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function confirmAiProducts() {
+  if (!_aiExtractedProducts.length) return;
+
+  const list = document.getElementById('product-list');
+
+  // Hapus semua baris manual yang KOSONG (nama tidak diisi)
+  [...list.querySelectorAll('.product-item')].forEach(item => {
+    const nameVal = item.querySelector('.prod-name')?.value?.trim() || '';
+    if (!nameVal) item.remove();
+  });
+
+  // Tambahkan semua produk dari AI ke list manual
+  _aiExtractedProducts.forEach(p => addProduct(p.name, p.price));
+
+  // Sembunyikan UI AI, tampilkan konfirmasi sukses
+  showEl('ai-result-box', false);
+  showEl('ai-error-box', false);
+  const zone = document.getElementById('upload-zone');
+  zone.style.display = '';
+  zone.innerHTML = `
+    <div class="upload-icon">✅</div>
+    <div class="upload-title">${_aiExtractedProducts.length} produk berhasil ditambahkan!</div>
+    <div class="upload-sub">Kamu bisa edit atau hapus di bawah, atau klik sini untuk upload file lagi</div>
+  `;
+  zone.onclick = () => document.getElementById('upload-file-input').click();
+
+  // Scroll ke product list
+  list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function resetUpload() {
+  _aiExtractedProducts = [];
+  showEl('ai-result-box', false);
+  showEl('ai-error-box', false);
+  showEl('ai-loading-box', false);
+  document.getElementById('upload-zone').style.display = '';
+  document.getElementById('upload-zone').innerHTML = `
+    <div class="upload-icon">🤖</div>
+    <div class="upload-title">Upload menu/katalog → AI baca otomatis</div>
+    <div class="upload-sub">Foto menu, PDF price list, atau file Excel — AI akan ekstrak semua produk & harga secara otomatis</div>
+    <div class="upload-formats">JPG · PNG · PDF · Excel · CSV</div>
+  `;
+}
+
+function showEl(id, visible) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (visible) {
+    el.classList.add('show');
+  } else {
+    el.classList.remove('show');
+  }
+}
+
+// ── FAQ LIST ─────────────────────────────────────────────────
+function addFaq() {
+  const list = document.getElementById('faq-list');
+  const d = document.createElement('div');
+  d.className = 'faq-item';
+  d.innerHTML = `
+    <div class="faq-inputs">
+      <input type="text"  class="faq-q" placeholder="Pertanyaan">
+      <textarea class="faq-a" placeholder="Jawaban"></textarea>
+    </div>
+    <button class="btn-remove" onclick="removeFaq(this)">×</button>`;
+  list.appendChild(d);
+  d.querySelector('input').focus();
+}
+
+function removeFaq(btn) {
+  const list = document.getElementById('faq-list');
+  if (list.children.length > 1) btn.closest('.faq-item').remove();
+}
+
+// ── VALIDATION ───────────────────────────────────────────────
+function showErr(id, show) {
+  document.getElementById(id)?.classList.toggle('visible', show);
+}
+
+function markErr(id, has) {
+  document.getElementById(id)?.classList.toggle('has-error', has);
+}
+
+function val(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+function validate(step) {
+  let ok = true;
+  const fail = (errId, inputId) => { showErr(errId, true); if(inputId) markErr(inputId, true); ok = false; };
+  const pass = (errId, inputId) => { showErr(errId, false); if(inputId) markErr(inputId, false); };
+
+  if (step === 1) {
+    val('biz-name') ? pass('err-biz-name','biz-name') : fail('err-biz-name','biz-name');
+    val('biz-type') ? pass('err-biz-type') : fail('err-biz-type');
+    val('biz-city') ? pass('err-biz-city','biz-city') : fail('err-biz-city','biz-city');
+    // Validasi nomor WA: harus angka, mulai 08 atau 628, panjang 10-14 digit
+    const waRaw = val('biz-wa').replace(/[\s\-\.]/g, '');
+    const waOk  = /^(08|628)\d{8,12}$/.test(waRaw);
+    if (!waRaw) {
+      fail('err-biz-wa','biz-wa');
+      document.getElementById('err-biz-wa').textContent = '⚠ Masukkan nomor WA bisnis';
+    } else if (!waOk) {
+      fail('err-biz-wa','biz-wa');
+      document.getElementById('err-biz-wa').textContent = '⚠ Format salah. Gunakan: 08xxx atau 628xxx';
+    } else {
+      pass('err-biz-wa','biz-wa');
+    }
+  }
+  if (step === 2) {
+    const has = [...document.querySelectorAll('.prod-name')].some(i => i.value.trim());
+    has ? showErr('err-products', false) : (showErr('err-products', true), ok = false);
+  }
+  if (step === 3) {
+    val('brand-voice') ? showErr('err-brand-voice', false) : (showErr('err-brand-voice', true), ok = false);
+  }
+  return ok;
+}
+
+// ── COLLECT ──────────────────────────────────────────────────
+function collect(step) {
+  if (step === 1) {
+    S.bizName = val('biz-name'); S.bizType = val('biz-type');
+    S.bizCity = val('biz-city'); S.bizWa   = val('biz-wa');
+    S.bizIg   = val('biz-ig');
+  }
+  if (step === 2) {
+    S.products = [...document.querySelectorAll('.product-item')].map(el => ({
+      name:  el.querySelector('.prod-name')?.value.trim()  || '',
+      price: el.querySelector('.prod-price')?.value.trim() || ''
+    })).filter(p => p.name);
+    S.bizDesc     = val('biz-desc');
+    S.orderMethod = [...document.querySelectorAll('#order-chips .chip.selected')].map(c => c.dataset.val);
+  }
+  if (step === 3) {
+    S.brandVoice = val('brand-voice');
+    S.botName    = val('bot-name');
+    S.emojiStyle = val('emoji-style');
+  }
+  if (step === 4) {
+    S.openTime   = val('open-time');
+    S.closeTime  = val('close-time');
+    S.operDays   = [...document.querySelectorAll('#days-chips .chip.selected')].map(c => c.dataset.val);
+    S.bizAddress = val('biz-address');
+    S.faqs       = [...document.querySelectorAll('.faq-item')].map(el => ({
+      q: el.querySelector('.faq-q')?.value.trim() || '',
+      a: el.querySelector('.faq-a')?.value.trim() || ''
+    })).filter(f => f.q && f.a);
+  }
+}
+
+// ── STEP NAV ─────────────────────────────────────────────────
+function nextStep() {
+  if (!validate(currentStep)) {
+    document.querySelector('.field-error.visible')?.scrollIntoView({ behavior:'smooth', block:'center' });
+    return;
+  }
+  collect(currentStep);
+  if (currentStep === TOTAL) { startGenerating(); return; }
+  currentStep++;
+  updateUI();
+}
+
+function prevStep() {
+  if (currentStep <= 1) return;
+  currentStep--;
+  updateUI();
+}
+
+function updateUI() {
+  document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
+  document.getElementById(`step-${currentStep}`).classList.add('active');
+  document.getElementById('step-current').textContent = currentStep;
+  document.getElementById('progress-fill').style.width = `${(currentStep / TOTAL) * 100}%`;
+  document.getElementById('btn-back').style.display = currentStep > 1 ? 'block' : 'none';
+  document.getElementById('btn-next').textContent = currentStep === TOTAL ? '🚀 Generate Chatbot!' : 'Lanjut →';
+  if (currentStep === TOTAL) buildReview();
+}
+
+// ── REVIEW ───────────────────────────────────────────────────
+function buildReview() {
+  for (let i = 1; i <= 4; i++) collect(i);
+
+  const voiceMap = { santai:'😊 Santai & Ramah', formal:'👔 Formal', gaul:'🔥 Gaul', mewah:'✨ Eksklusif' };
+  const typeMap  = { kuliner:'🍜 Kuliner', fashion:'👗 Fashion', kecantikan:'💄 Kecantikan',
+                     jasa:'🔧 Jasa', retail:'🛍️ Retail', pendidikan:'📚 Pendidikan',
+                     kesehatan:'🏥 Kesehatan', lainnya:'✨ Lainnya' };
+
+  const prodStr  = S.products.length
+    ? S.products.map(p => `${p.name}${p.price ? ' — Rp ' + p.price : ''}`).join(' · ')
+    : '(belum diisi)';
+  const daysStr  = S.operDays.length ? S.operDays.join(', ') : '—';
+  const hoursStr = S.openTime && S.closeTime ? `${S.openTime} – ${S.closeTime}` : '—';
+
+  document.getElementById('review-content').innerHTML = `
+    <div class="review-card">
+      <div class="review-card-label">Info Bisnis</div>
+      <div class="review-card-title">${esc(S.bizName)}</div>
+      <div class="review-card-

@@ -169,9 +169,9 @@ const upload = multer({
 });
 
 // ============================================================
-// SERVE FRONTEND (BotMatic_App.html dari folder parent)
+// SERVE FRONTEND (BotMatic_App.html)
 // ============================================================
-const FRONTEND_PATH = path.join(__dirname, '..', 'BotMatic_App.html');
+const FRONTEND_PATH = path.join(__dirname, 'BotMatic_App.html');
 app.get('/', (req, res) => {
   if (fs.existsSync(FRONTEND_PATH)) {
     res.sendFile(FRONTEND_PATH);
@@ -564,7 +564,7 @@ app.post('/api/onboarding', requireAuth, async (req, res) => {
 // ROUTE: Serve frontend HTML
 // ============================================================
 app.get('/', (req, res) => {
-  const htmlPath = path.join(__dirname, '..', 'BotMatic_App.html');
+  const htmlPath = path.join(__dirname, 'BotMatic_App.html');
   if (fs.existsSync(htmlPath)) {
     res.sendFile(htmlPath);
   } else {
