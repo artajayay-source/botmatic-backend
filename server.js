@@ -1048,16 +1048,32 @@ async function processIncomingBaileysMessage(businessId, msg, sock) {
     await sock.sendPresenceUpdate('composing', senderJid);
 
     // 4. Generate AI reply
-    const aiReply = await generateAIReply({
-      business,
-      customerMessage: text.trim(),
-      customerName: senderName,
-      conversationHistory: conversation.context || []
-    });
+    let aiReply;
+    try {
+      aiReply = await generateAIReply({
+        business,
+        customerMessage: text.trim(),
+        customerName: senderName,
+        conversationHistory: conversation.context || []
+      });
+    } catch (aiErr) {
+      console.error(`[${businessId}] generateAIReply gagal:`, aiErr.message);
+      aiReply = { content: `Halo ${senderName}! Terima kasih sudah menghubungi kami. Ada yang bisa kami bantu? 😊`, tokensUsed: 0, inputTokens: 0, outputTokens: 0 };
+    }
 
-    // 5. Kirim balasan
-    await sock.sendMessage(senderJid, { text: aiReply.content });
+    // 5. Kirim balasan (dengan retry untuk "No sessions" error - Baileys fetch keys dulu)
     await sock.sendPresenceUpdate('paused', senderJid);
+    try {
+      await sock.sendMessage(senderJid, { text: aiReply.content });
+    } catch (sendErr) {
+      if (sendErr.message?.includes('No sessions') || sendErr.message?.includes('session')) {
+        console.log(`[${businessId}] No sessions - retry setelah 3 detik...`);
+        await new Promise(r => setTimeout(r, 3000));
+        await sock.sendMessage(senderJid, { text: aiReply.content });
+      } else {
+        throw sendErr;
+      }
+    }
 
     // 6. Simpan balasan ke database
     await supabase.from('messages').insert({
