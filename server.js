@@ -24,8 +24,10 @@ import makeWASocket, {
   useMultiFileAuthState,
   DisconnectReason,
   getContentType,
-  fetchLatestBaileysVersion
+  fetchLatestBaileysVersion,
+  makeCacheableSignalKeyStore
 } from '@whiskeysockets/baileys';
+import NodeCache from 'node-cache';
 import pino from 'pino';
 import QRCode from 'qrcode';
 import multer from 'multer';
@@ -831,6 +833,9 @@ async function createSession(businessId, waNumber) {
   const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
   console.log(`[${businessId}] Auth state loaded`);
 
+  // NodeCache untuk retry counter — wajib untuk prevent "No sessions" error
+  const msgRetryCounterCache = new NodeCache();
+
   // Gunakan versi hardcoded agar tidak hang saat fetch ke server WA
   let version = [2, 3000, 1015901307];
   try {
@@ -848,11 +853,19 @@ async function createSession(businessId, waNumber) {
   const sock = makeWASocket({
     version,
     logger,
-    auth: state,
+    // makeCacheableSignalKeyStore: cache signal session keys in-memory
+    // → mencegah "No sessions" error saat kirim pesan ke kontak baru
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, logger)
+    },
+    msgRetryCounterCache,
     printQRInTerminal: false,
     browser: ['BotMatic', 'Chrome', '1.0.0'],
     generateHighQualityLinkPreview: false,
-    syncFullHistory: false
+    syncFullHistory: false,
+    retryRequestDelayMs: 350,
+    maxMsgRetryCount: 5
   });
   console.log(`[${businessId}] Socket created, waiting for QR...`);
 
@@ -1061,19 +1074,9 @@ async function processIncomingBaileysMessage(businessId, msg, sock) {
       aiReply = { content: `Halo ${senderName}! Terima kasih sudah menghubungi kami. Ada yang bisa kami bantu? 😊`, tokensUsed: 0, inputTokens: 0, outputTokens: 0 };
     }
 
-    // 5. Kirim balasan (dengan retry untuk "No sessions" error - Baileys fetch keys dulu)
+    // 5. Kirim balasan
     await sock.sendPresenceUpdate('paused', senderJid);
-    try {
-      await sock.sendMessage(senderJid, { text: aiReply.content });
-    } catch (sendErr) {
-      if (sendErr.message?.includes('No sessions') || sendErr.message?.includes('session')) {
-        console.log(`[${businessId}] No sessions - retry setelah 3 detik...`);
-        await new Promise(r => setTimeout(r, 3000));
-        await sock.sendMessage(senderJid, { text: aiReply.content });
-      } else {
-        throw sendErr;
-      }
-    }
+    await sock.sendMessage(senderJid, { text: aiReply.content });
 
     // 6. Simpan balasan ke database
     await supabase.from('messages').insert({
