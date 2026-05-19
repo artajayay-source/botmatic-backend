@@ -1017,24 +1017,11 @@ async function processIncomingBaileysMessage(businessId, msg, sock) {
 
     if (!text || text.trim() === '') return;
 
-    // Normalisasi JID — WhatsApp baru pakai @lid untuk privasi
-    // Baileys tidak bisa kirim ke @lid, harus dikonversi ke @s.whatsapp.net
-    let rawJid = msg.key.remoteJid;
-    let senderJid;
-    if (rawJid.endsWith('@lid')) {
-      // Konversi @lid → @s.whatsapp.net pakai nomor yang sama
-      const number = rawJid.split('@')[0];
-      senderJid = `${number}@s.whatsapp.net`;
-      console.log(`[${businessId}] @lid JID dikonversi: ${rawJid} → ${senderJid}`);
-    } else {
-      try {
-        senderJid = jidNormalizedUser(rawJid);
-      } catch {
-        senderJid = rawJid;
-      }
-    }
+    // Gunakan JID asli langsung — Baileys v6 + makeCacheableSignalKeyStore support @lid
+    let senderJid = msg.key.remoteJid;
+    try { senderJid = jidNormalizedUser(senderJid); } catch { /* pakai asli */ }
 
-    const senderWa = senderJid.replace('@s.whatsapp.net', '').replace('@c.us', '');
+    const senderWa = senderJid.replace('@s.whatsapp.net', '').replace('@c.us', '').replace('@lid', '');
     const senderName = msg.pushName || 'Kak';
 
     console.log(`[${businessId}] Pesan dari ${senderWa}: ${text.substring(0, 50)}`);
