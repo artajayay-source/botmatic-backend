@@ -1012,7 +1012,7 @@ async function processIncomingBaileysMessage(businessId, msg, sock) {
     // 1. Ambil data bisnis
     const { data: business, error: bizError } = await supabase
       .from('businesses')
-      .select('*, scripts(*)')
+      .select('*, scripts(*), products(*)')
       .eq('id', businessId)
       .eq('is_connected', true)
       .single();
@@ -1318,6 +1318,12 @@ async function generateAIReply({ business, customerMessage, customerName, conver
 
   const recentHistory = conversationHistory.slice(-10);
 
+  // Susun daftar produk dari tabel products
+  const productItems = business.products || [];
+  const productList = productItems.length > 0
+    ? productItems.map(p => `- ${p.name}${p.price ? ` (${p.price})` : ''}${p.description ? `: ${p.description}` : ''}`).join('\n')
+    : (scriptMap.products || 'Hubungi kami untuk info produk');
+
   const systemPrompt = `Kamu adalah asisten WhatsApp AI untuk ${business.name}, sebuah bisnis ${business.category} di Indonesia.
 
 KARAKTER KAMU:
@@ -1328,10 +1334,13 @@ KARAKTER KAMU:
 INFORMASI BISNIS:
 - Jam buka: ${business.hours_open} - ${business.hours_close} (${business.days_open})
 - Lokasi: ${business.location || 'hubungi kami untuk info lokasi'}
+- Cara order: ${business.order_method || 'hubungi kami langsung'}
+
+DAFTAR PRODUK/MENU (WAJIB gunakan data ini saat ditanya harga):
+${productList}
 
 TEMPLATE PESAN (gunakan sebagai referensi):
 Greeting: ${scriptMap.greeting || '-'}
-Produk: ${scriptMap.products || '-'}
 Order: ${scriptMap.order || '-'}
 Operasional: ${scriptMap.operational || '-'}
 FAQ: ${scriptMap.faq || '-'}
