@@ -1496,11 +1496,6 @@
 <script>
 'use strict';
 
-// ── BACKEND URL (auto-detect: Railway atau localhost) ────────
-const BACKEND_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? 'http://localhost:3000'
-  : window.location.origin;
-
 // ── AUTH STATE ───────────────────────────────────────────────
 let _authToken = null;
 let _authUser  = null;
@@ -1981,4 +1976,558 @@ function buildReview() {
     <div class="review-card">
       <div class="review-card-label">Info Bisnis</div>
       <div class="review-card-title">${esc(S.bizName)}</div>
-      <div class="review-card-
+      <div class="review-card-sub">
+        ${typeMap[S.bizType] || S.bizType} · ${esc(S.bizCity)}<br>
+        WA: ${esc(S.bizWa)}${S.bizIg ? ' · IG: '+esc(S.bizIg) : ''}
+      </div>
+    </div>
+    <div class="review-card">
+      <div class="review-card-label">Produk (${S.products.length} item)</div>
+      <div class="review-card-sub">${esc(prodStr)}</div>
+    </div>
+    <div class="review-card">
+      <div class="review-card-label">Karakter Bot</div>
+      <div class="review-card-sub">
+        ${voiceMap[S.brandVoice] || '—'}${S.botName ? ' · Nama: '+esc(S.botName) : ''}<br>
+        Jam: ${hoursStr} · Hari: ${daysStr}<br>
+        FAQ tersimpan: ${S.faqs.length} pertanyaan
+      </div>
+    </div>`;
+}
+
+// ── BACKEND CONFIG ────────────────────────────────────────────
+const BACKEND_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1' || location.hostname === '')
+  ? 'http://localhost:3000'
+  : location.origin;
+
+// ── FETCH WRAPPER (Bearer token otomatis) ────────────────────
+const _origFetch = window.fetch;
+window.fetch = function(url, opts = {}) {
+  if (typeof url === 'string' && url.startsWith(BACKEND_URL)) {
+    const extraHeaders = {};
+    // Inject Bearer token untuk semua endpoint /api/* kecuali auth publik
+    if (_authToken && !url.includes('/api/auth/login') && !url.includes('/api/auth/register')) {
+      extraHeaders['Authorization'] = `Bearer ${_authToken}`;
+    }
+    opts.headers = Object.assign(extraHeaders, opts.headers || {});
+  }
+  return _origFetch(url, opts);
+};
+
+// ── GENERATING ───────────────────────────────────────────────
+function startGenerating() {
+  show('screen-generating');
+  document.getElementById('gen-biz-name').textContent =
+    `Membuatkan chatbot untuk ${S.bizName || 'bisnis kamu'}...`;
+
+  const ids = ['gen-s1','gen-s2','gen-s3','gen-s4','gen-s5'];
+  let i = 0;
+
+  // Mulai animasi steps
+  (function tick() {
+    if (i > 0) {
+      const p = document.getElementById(ids[i-1]);
+      p.classList.remove('active'); p.classList.add('done');
+      p.querySelector('.gen-step-icon').textContent = '✅';
+    }
+    if (i < ids.length) {
+      const el = document.getElementById(ids[i]);
+      el.classList.add('active');
+      el.querySelector('.gen-step-icon').innerHTML = '<div class="spin-ring"></div>';
+      i++;
+      setTimeout(tick, 820);
+    }
+  })();
+
+  // Kirim data ke backend secara paralel
+  submitToBackend().then(result => {
+    if (result && result.businessId) {
+      S.businessId = result.businessId;
+      // Merge AI scripts dari backend ke scripts lokal
+      if (result.scripts) {
+        S.aiScripts = result.scripts; // simpan AI scripts
+      }
+    }
+  }).catch(err => {
+    console.warn('Backend unavailable, using local scripts:', err.message);
+  }).finally(() => {
+    // Setelah minimal 5 × 820ms = 4.1 detik animasi, tampilkan preview
+    const elapsed = ids.length * 820 + 500;
+    setTimeout(() => { S.scripts = buildScripts(); buildPreview(); show('screen-preview'); }, elapsed);
+  });
+}
+
+async function submitToBackend() {
+  const payload = {
+    businessInfo: {
+      name: S.bizName,
+      category: S.bizType,
+      description: S.bizDesc,
+      location: S.bizCity,
+      instagram: S.bizIg,
+      email: ''
+    },
+    products: S.products.map(p => ({ name: p.name, price: p.price, description: '' })),
+    brandVoice: S.brandVoice || 'santai',
+    hours: {
+      open: S.openTime || '08:00',
+      close: S.closeTime || '21:00',
+      days: (S.operDays || []).join(', ')
+    },
+    faq: S.faqs || []
+  };
+
+  const resp = await fetch(`${BACKEND_URL}/api/onboarding`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(15000)
+  });
+
+  if (!resp.ok) throw new Error(`Backend error: ${resp.status}`);
+  return resp.json();
+}
+
+// ── SCRIPT GENERATOR ─────────────────────────────────────────
+function buildScripts() {
+  const nm  = S.bizName || 'bisnis kami';
+  const bot = S.botName || 'Asisten';
+  const v   = S.brandVoice;
+  const em  = S.emojiStyle;
+  const ops = (S.openTime && S.closeTime) ? `${S.openTime}–${S.closeTime}` : '08.00–21.00';
+  const days = S.operDays.length ? S.operDays.join(', ') : 'Senin–Minggu';
+
+  const e = n => em ? (em.replace(/\s/g,'').split('')[n] || '') : '';
+
+  const tone = {
+    santai: { g:`Halo Kak! ${e(1)}`, c:`Ada yang bisa aku bantu lagi? ${e(1)}`, sapa:'Kak',      iya:'Boleh banget' },
+    formal: { g:`Selamat datang.`,    c:`Apakah ada yang dapat kami bantu?`,      sapa:'Bapak/Ibu', iya:'Dengan senang hati' },
+    gaul:   { g:`Heyyy! ${e(0)}`,     c:`Mau tanya lagi? Gas aja! ${e(0)}`,       sapa:'gaes',     iya:'Bisa banget' },
+    mewah:  { g:`Selamat datang. ${e(0)}`, c:`Kami senantiasa siap melayani Anda. ${e(0)}`, sapa:'Anda', iya:'Tentu saja' }
+  };
+  const t = tone[v] || tone.santai;
+
+  const icons = ['🔹','🔸','⭐','✨','💎','🌟','🍀','🎯'];
+  const prodLines = S.products.length
+    ? S.products.map((p,i) => `${icons[i%icons.length]} *${p.name}*${p.price ? ' — Rp '+p.price : ''}`).join('\n')
+    : '🔹 *Produk unggulan kami tersedia dalam berbagai pilihan*';
+
+  const orderMap = { wa:'Chat WA ini', shopee:'Shopee', tokopedia:'Tokopedia',
+                     gofood:'GoFood', grab:'GrabFood', langsung:'Datang langsung ke toko' };
+  const orderStr = S.orderMethod.length
+    ? S.orderMethod.map(m => orderMap[m] || m).join(' · ')
+    : 'Chat WA ini';
+
+  const faqBlock = S.faqs.length
+    ? S.faqs.map(f => `❓ *"${f.q}"*\n→ ${f.a}`).join('\n\n')
+    : `❓ *"Berapa harganya?"*\n→ Harga bervariasi, cek menu di atas ya!\n\n❓ *"Ada diskon?"*\n→ Ada promo spesial! Tanya kami untuk info terbaru.`;
+
+  const addrLine = S.bizAddress ? `\n📍 Lokasi: ${S.bizAddress}` : '';
+  const igLine   = S.bizIg      ? `\n📸 Instagram: ${S.bizIg}` : '';
+
+  return {
+    greeting:    { tag:'Pesan Sambutan',    body:`${t.g}\n\nSelamat datang di *${nm}*!\nSaya ${bot}, asisten yang siap bantu kamu 24 jam ${e(0)}\n\nKetik nomor atau langsung tanya:\n1️⃣ Lihat Menu / Produk\n2️⃣ Cara Order\n3️⃣ Info Lokasi & Jam Buka\n4️⃣ Promo & Diskon\n5️⃣ Hubungi CS\n\n${t.c}` },
+    products:    { tag:'Daftar Produk',     body:`${e(0)} *Menu & Produk ${nm}*\n\n${prodLines}\n\n${t.c}\n\nKetik nama produk untuk info lengkap, atau ketik *ORDER* untuk pesan! ${e(1)}` },
+    order:       { tag:'Cara Order',        body:`${e(1)} *Cara Order di ${nm}*\n\n${e(0)} Tersedia via: ${orderStr}\n\n📋 *Langkah pemesanan:*\n1. Pilih produk yang kamu mau\n2. Kabari jumlah & alamat (jika delivery)\n3. Konfirmasi total harga\n4. Lakukan pembayaran\n5. Pesanan segera diproses ${e(0)}\n\n⏱ Estimasi: 30–60 menit\n\n${t.c}` },
+    operasional: { tag:'Info Operasional',  body:`${e(0)} *Info Operasional ${nm}*\n\n🕐 Jam Buka: ${ops}\n📅 Hari: ${days}${addrLine}${igLine}\n\n${e(1)} Kami siap melayani ${t.sapa} sepenuh hati!\n\n${t.c}` },
+    faq:         { tag:'FAQ Otomatis',      body:`${e(1)} *Pertanyaan yang Sering Ditanya*\n\n${faqBlock}\n\n${e(2)} Masih ada pertanyaan? Langsung tanya aja ya ${t.sapa}!` },
+    followup:    { tag:'Pesan Follow-up',   body:`${e(1)} Halo ${t.sapa}!\n\nTerima kasih sudah menghubungi *${nm}* ${e(0)}\n\nAda yang bisa kami bantu? Atau ada yang ingin kamu tanyakan tentang produk kami?\n\n${t.iya} kami siap membantu! ${e(2)}\n\n— Tim ${nm}` }
+  };
+}
+
+// ── PREVIEW ──────────────────────────────────────────────────
+function buildPreview() {
+  const sc = S.scripts;
+  const avatarMap = { kuliner:'🍜', fashion:'👗', kecantikan:'💄', jasa:'🔧',
+                      retail:'🛍️', pendidikan:'📚', kesehatan:'🏥', lainnya:'✨' };
+
+  document.getElementById('pv-biz-name').textContent = S.bizName || 'Bisnis Kamu';
+  document.getElementById('pv-avatar').textContent   = avatarMap[S.bizType] || '🤖';
+
+  const chat = document.getElementById('pv-chat');
+  chat.innerHTML = '';
+
+  const now = () => {
+    const d = new Date();
+    return `${String(d.getHours()).padStart(2,'0')}.${String(d.getMinutes()).padStart(2,'0')}`;
+  };
+
+  function addMsg(text, cls, t) {
+    const d = document.createElement('div');
+    d.className = `wa-msg ${cls}`;
+    d.innerHTML = `${text.replace(/\*(.*?)\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}<div class="wa-msg-time">${t}${cls==='out'?' <span class="wa-check">✓✓</span>':''}</div>`;
+    chat.appendChild(d);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  addMsg('Halo, masih buka?', 'in', now());
+  setTimeout(() => {
+    addMsg(sc.greeting.body, 'out', now());
+    setTimeout(() => {
+      addMsg('1', 'in', now());
+      setTimeout(() => addMsg(sc.products.body, 'out', now()), 700);
+    }, 500);
+  }, 250);
+
+  // Script cards
+  const panel = document.getElementById('script-panel');
+  panel.innerHTML = '';
+  Object.values(sc).forEach(s => {
+    const safe = s.body.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+    const d = document.createElement('div');
+    d.className = 'script-card';
+    d.innerHTML = `
+      <div class="script-card-header">
+        <span class="script-tag">${s.tag}</span>
+        <button class="copy-btn" onclick="copyText(this,\`${safe}\`)">Salin</button>
+      </div>
+      <div class="script-content">${s.body.replace(/\*(.*?)\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`;
+    panel.appendChild(d);
+  });
+}
+
+// ── COPY ─────────────────────────────────────────────────────
+function copyText(btn, text) {
+  const decoded = text.replace(/\\`/g,'`').replace(/\\\\/g,'\\');
+  const flash = () => {
+    btn.textContent = '✓ Tersalin!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Salin'; btn.classList.remove('copied'); }, 1800);
+  };
+  const fallback = () => {
+    const ta = Object.assign(document.createElement('textarea'),
+      { value: decoded, style: 'position:fixed;opacity:0' });
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && location.protocol === 'https:') {
+    navigator.clipboard.writeText(decoded).then(flash).catch(() => { fallback(); flash(); });
+  } else { fallback(); flash(); }
+}
+
+// ── DOWNLOAD ─────────────────────────────────────────────────
+function downloadAllScripts() {
+  if (!Object.keys(S.scripts).length) S.scripts = buildScripts();
+  const sc = S.scripts;
+
+  let out = `================================================================\n`;
+  out += `SCRIPT CHATBOT WHATSAPP — ${(S.bizName || 'BISNIS KAMU').toUpperCase()}\n`;
+  out += `Generated by BotMatic\n`;
+  out += `================================================================\n\n`;
+  out += `CARA PAKAI DI FONNTE:\n`;
+  out += `1. Login ke fonnte.com\n`;
+  out += `2. Buka menu "Auto Reply"\n`;
+  out += `3. Buat rule untuk setiap trigger kata kunci\n`;
+  out += `4. Paste script di kolom "Reply Message"\n`;
+  out += `5. Aktifkan toggle Auto Reply\n\n`;
+  out += `================================================================\n`;
+
+  Object.values(sc).forEach(s => {
+    out += `\n[${s.tag.toUpperCase()}]\n${'─'.repeat(46)}\n`;
+    out += s.body.replace(/\*(.*?)\*/g, '$1') + '\n';
+  });
+
+  out += `\n================================================================\n`;
+  out += `Bisnis : ${S.bizName || '—'}\nWA     : ${S.bizWa || '—'}\nKota   : ${S.bizCity || '—'}\n`;
+  out += `================================================================\n`;
+
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([out], { type:'text/plain;charset=utf-8' })),
+    download: `Script_BotMatic_${(S.bizName||'bisnis').replace(/\s+/g,'_')}.txt`
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ── QR REAL dari Baileys ──────────────────────────────────────
+let _qrPollInterval    = null;  // polling /api/get-qr (QR image)
+let _connPollInterval  = null;  // polling /api/check-connection
+let _qrCountdownInterval = null;
+
+function _startQRCountdown() {
+  if (_qrCountdownInterval) clearInterval(_qrCountdownInterval);
+  let secs = 60;
+  const noteEl = document.getElementById('qr-note');
+  if (!noteEl) return;
+  noteEl.textContent = `QR aktif selama ${secs} detik`;
+  _qrCountdownInterval = setInterval(() => {
+    secs--;
+    if (noteEl) noteEl.textContent = `QR aktif selama ${secs} detik`;
+    if (secs <= 0) {
+      clearInterval(_qrCountdownInterval);
+      _qrCountdownInterval = null;
+      if (noteEl) noteEl.textContent = 'QR kedaluwarsa — memuat ulang...';
+      refreshQR();
+    }
+  }, 1000);
+}
+
+async function generateQR() {
+  const grid = document.getElementById('qr-grid');
+  if (!grid) return;
+
+  // Tampilkan loading
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text2);font-size:13px;">
+    <div class="spin-ring" style="margin:0 auto 12px;"></div>
+    Menyiapkan sesi WhatsApp...
+  </div>`;
+
+  // Tanpa businessId → fake QR
+  if (!S.businessId && !S.bizWa) {
+    _renderFakeQR(grid);
+    return;
+  }
+
+  try {
+    // 1. Minta backend mulai sesi Baileys (async — QR belum tentu langsung ada)
+    const resp = await fetch(`${BACKEND_URL}/api/setup-device`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        businessId: S.businessId || null,
+        waNumber: S.bizWa,
+        businessName: S.bizName
+      }),
+      signal: AbortSignal.timeout(20000)
+    });
+
+    const data = await resp.json();
+
+    // Sudah connected sebelumnya?
+    if (data.status === 'already_connected') {
+      simulateConnect();
+      return;
+    }
+
+    // 2. Mulai polling /api/get-qr/:businessId setiap 2 detik
+    if (S.businessId) {
+      _startQRPolling(grid);
+      _startConnectionPolling();
+    } else {
+      _renderFakeQR(grid);
+    }
+
+  } catch (err) {
+    console.warn('Setup device error:', err.message);
+    _renderFakeQR(grid);
+    document.getElementById('btn-connect').style.display = 'block';
+    if (S.businessId) _startConnectionPolling();
+  }
+}
+
+// Polling /api/get-qr setiap 2 detik sampai QR muncul
+function _startQRPolling(grid) {
+  if (_qrPollInterval) clearInterval(_qrPollInterval);
+  let attempts = 0;
+
+  _qrPollInterval = setInterval(async () => {
+    attempts++;
+    try {
+      const resp = await fetch(`${BACKEND_URL}/api/get-qr/${S.businessId}`);
+      const data = await resp.json();
+
+      if (data.status === 'connected') {
+        // Sudah connected saat polling
+        clearInterval(_qrPollInterval); _qrPollInterval = null;
+        simulateConnect();
+        return;
+      }
+
+      if (data.status === 'qr_ready' && (data.qrRaw || data.qr)) {
+        clearInterval(_qrPollInterval); _qrPollInterval = null;
+        // Render QR pakai library client-side (lebih akurat)
+        grid.innerHTML = '<div id="qr-canvas-container" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;"></div>';
+        const container = document.getElementById('qr-canvas-container');
+        if (data.qrRaw && typeof QRCode !== 'undefined') {
+          new QRCode(container, {
+            text: data.qrRaw,
+            width: 256,
+            height: 256,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.L
+          });
+        } else {
+          container.innerHTML = `<img src="${data.qr}" alt="QR Code WhatsApp" style="width:256px;height:256px;object-fit:contain;">`;
+        }
+        _startQRCountdown();
+        return;
+      }
+
+      // Timeout setelah 30 detik (15 attempts × 2s)
+      if (attempts >= 15) {
+        clearInterval(_qrPollInterval); _qrPollInterval = null;
+        grid.innerHTML = `<div style="grid-column:1/-1;padding:16px;text-align:center;color:var(--text2);font-size:12px;line-height:1.8;">
+          <div style="font-size:28px;margin-bottom:8px;">⚠️</div>
+          QR timeout. Klik <b>Refresh QR</b> untuk coba lagi.
+        </div>`;
+      }
+
+    } catch (e) { /* silent */ }
+  }, 2000);
+}
+
+function _renderFakeQR(grid) {
+  const W = 0, B = 1;
+  const corner = [
+    [B,B,B,B,B,B,B],[B,W,W,W,W,W,B],[B,W,B,B,B,W,B],
+    [B,W,B,B,B,W,B],[B,W,W,W,W,W,B],[B,B,B,B,B,B,B],[W,W,W,W,W,W,W]
+  ];
+  const SIZE = 11;
+  grid.innerHTML = '';
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+      const d = document.createElement('div');
+      let black;
+      if (r < 7 && c < 7)         black = corner[r][c] === B;
+      else if (r < 7 && c > SIZE-8) black = corner[r][SIZE-1-c] === B;
+      else if (r > SIZE-8 && c < 7) black = corner[SIZE-1-r][c] === B;
+      else                           black = Math.random() > 0.48;
+      d.className = black ? 'qc' : 'qc w';
+      grid.appendChild(d);
+    }
+  }
+}
+
+function _startConnectionPolling() {
+  if (_connPollInterval) clearInterval(_connPollInterval);
+  if (!S.businessId) return;
+
+  _connPollInterval = setInterval(async () => {
+    try {
+      const resp = await fetch(`${BACKEND_URL}/api/check-connection/${S.businessId}`);
+      const data = await resp.json();
+
+      if (data.connected) {
+        clearInterval(_connPollInterval); _connPollInterval = null;
+        if (_qrPollInterval) { clearInterval(_qrPollInterval); _qrPollInterval = null; }
+        if (_qrCountdownInterval) { clearInterval(_qrCountdownInterval); _qrCountdownInterval = null; }
+        simulateConnect();
+      }
+    } catch (err) {
+      // silent — terus polling
+    }
+  }, 3000);
+}
+
+function refreshQR() {
+  if (_qrPollInterval) { clearInterval(_qrPollInterval); _qrPollInterval = null; }
+  if (_connPollInterval) { clearInterval(_connPollInterval); _connPollInterval = null; }
+  if (_qrCountdownInterval) { clearInterval(_qrCountdownInterval); _qrCountdownInterval = null; }
+  const g = document.getElementById('qr-grid');
+  if (!g) return;
+  g.style.cssText += 'transition:opacity 0.2s;opacity:0';
+  setTimeout(() => { g.style.opacity = '1'; generateQR(); }, 200);
+}
+
+// ── CONNECT SIMULATE ─────────────────────────────────────────
+async function simulateConnect() {
+  const dot  = document.getElementById('status-dot');
+  const card = document.getElementById('status-card');
+  const btn  = document.getElementById('btn-connect');
+
+  // Disable tombol selama proses
+  if (btn) { btn.disabled = true; btn.textContent = 'Menghubungkan...'; }
+
+  // Update UI ke connected
+  dot.className = 'status-dot connected';
+  card.classList.add('connected');
+  document.getElementById('status-h').textContent = '✅ WhatsApp Terhubung!';
+  document.getElementById('status-d').textContent = `Nomor ${S.bizWa || 'WA Bisnis'} berhasil terhubung`;
+
+  ['cn-s3','cn-s4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('done');
+    el.querySelector('.cn-step-num').textContent = '✓';
+  });
+
+  setTimeout(() => {
+    document.getElementById('success-msg').innerHTML =
+      `Chatbot WhatsApp untuk <strong>${esc(S.bizName) || 'bisnis kamu'}</strong> sudah aktif dan siap melayani customer 24 jam sehari, 7 hari seminggu.`;
+    show('screen-success');
+  }, 1600);
+}
+
+// ── UTIL ─────────────────────────────────────────────────────
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  initChips('biz-type-chips', 'biz-type',   false);
+  initChips('voice-chips',    'brand-voice', false);
+  initChips('order-chips',    null,          true);
+  initChips('days-chips',     null,          true);
+  initChips('emoji-chips',    'emoji-style', false);
+
+  // Char counter
+  const desc = document.getElementById('biz-desc');
+  if (desc) desc.addEventListener('input', () => {
+    document.getElementById('desc-count').textContent = desc.value.length;
+  });
+
+  // Auto-clear error styling on input
+  document.querySelectorAll('input, textarea').forEach(el => {
+    el.addEventListener('input', () => el.classList.remove('has-error'));
+  });
+});
+</script>
+
+<!-- PWA Service Worker + Install Prompt -->
+<script>
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Tampilkan banner install setelah 3 detik
+  setTimeout(() => {
+    if (deferredPrompt && document.getElementById('screen-landing')?.classList.contains('active')) {
+      showInstallBanner();
+    }
+  }, 3000);
+});
+
+function showInstallBanner() {
+  if (document.getElementById('install-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'install-banner';
+  banner.style.cssText = `
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:#1a1a1a;border:1px solid #00C853;border-radius:14px;
+    padding:14px 20px;display:flex;align-items:center;gap:12px;
+    font-family:Inter,sans-serif;font-size:13px;color:#f0f0f0;
+    z-index:9999;box-shadow:0 8px 32px rgba(0,200,83,0.2);
+    max-width:340px;width:calc(100% - 40px);
+  `;
+  banner.innerHTML = `
+    <span style="font-size:24px">📲</span>
+    <div style="flex:1">
+      <div style="font-weight:600;margin-bottom:2px">Install BotMatic</div>
+      <div style="color:#888;font-size:12px">Tambah ke layar utama HP kamu</div>
+    </div>
+    <button onclick="installPWA()" style="background:#00C853;color:#000;border:none;border-radius:8px;padding:8px 14px;font-weight:700;font-size:12px;cursor:pointer">Install</button>
+    <button onclick="document.getElementById('install-banner').remove()" style="background:none;border:none;color:#888;font-size:18px;cursor:pointer;padding:0 4px">×</button>
+  `;
+  document.body.appendChild(banner);
+}
+
+async function installPWA() {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('install-banner')?.remove();
+}
+</script>
+</body>
+</html>
