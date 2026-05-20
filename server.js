@@ -524,7 +524,7 @@ app.post('/api/onboarding', requireAuth, async (req, res) => {
       const productRows = products.map((p, i) => ({
         business_id: business.id,
         name: p.name,
-        price: p.price ? parseInt(p.price.toString().replace(/\D/g, '')) : null,
+        price: p.price ? p.price.toString().trim() : null, // simpan persis: $15, Rp 15.000, 15K
         description: p.description || '',
         sort_order: i
       }));
