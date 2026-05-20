@@ -1360,7 +1360,8 @@ ATURAN PENTING:
 4. Jika ditanya sesuatu yang tidak kamu tahu, sarankan hubungi pemilik langsung
 5. Jangan pernah berpura-pura jadi manusia, kamu adalah bot AI
 6. Sapa pelanggan dengan "${customerName}"
-7. WAJIB: Tulis harga PERSIS seperti yang tertulis di daftar produk di atas — jangan konversi, jangan ubah format, jangan ganti mata uang. Jika tertulis $15 maka tulis $15, jika Rp 50.000 maka tulis Rp 50.000.`;
+7. WAJIB: Tulis harga PERSIS seperti yang tertulis di daftar produk di atas — jangan konversi, jangan ubah format, jangan ganti mata uang. Jika tertulis $15 maka tulis $15, jika Rp 50.000 maka tulis Rp 50.000.
+8. Jika harga di daftar produk hanya angka tanpa simbol (misal: 15), tampilkan apa adanya tanpa menambah atau mengubah apapun.`;
 
   try {
     const messages = [
