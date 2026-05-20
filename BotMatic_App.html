@@ -1150,7 +1150,7 @@
       <div class="product-list" id="product-list">
         <div class="product-item">
           <input type="text"  class="prod-name"  placeholder="Nama produk (contoh: Nasi Goreng Spesial)">
-          <input type="text"  class="prod-price" placeholder="Harga (25.000)">
+          <input type="text"  class="prod-price" placeholder="Harga (contoh: Rp 25.000 atau $15)">
           <button class="btn-remove" onclick="removeProduct(this)">×</button>
         </div>
         <div class="product-item">
@@ -1695,7 +1695,7 @@ function addProduct(name = '', price = '') {
   d.className = 'product-item';
   d.innerHTML = `
     <input type="text" class="prod-name"  placeholder="Nama produk" value="${esc(name)}">
-    <input type="text" class="prod-price" placeholder="Harga" value="${esc(price)}">
+    <input type="text" class="prod-price" placeholder="Harga (contoh: Rp 25.000 atau $15)" value="${esc(price)}">
     <button class="btn-remove" onclick="removeProduct(this)">×</button>`;
   list.appendChild(d);
   if (!name) d.querySelector('input').focus();
@@ -1992,7 +1992,7 @@ function buildReview() {
                      kesehatan:'🏥 Kesehatan', lainnya:'✨ Lainnya' };
 
   const prodStr  = S.products.length
-    ? S.products.map(p => `${p.name}${p.price ? ' — Rp ' + p.price : ''}`).join(' · ')
+    ? S.products.map(p => `${p.name}${p.price ? ' — ' + p.price : ''}`).join(' · ')
     : '(belum diisi)';
   const daysStr  = S.operDays.length ? S.operDays.join(', ') : '—';
   const hoursStr = S.openTime && S.closeTime ? `${S.openTime} – ${S.closeTime}` : '—';
@@ -2134,7 +2134,8 @@ function buildScripts() {
 
   const icons = ['🔹','🔸','⭐','✨','💎','🌟','🍀','🎯'];
   const prodLines = S.products.length
-    ? S.products.map((p,i) => `${icons[i%icons.length]} *${p.name}*${p.price ? ' — Rp '+p.price : ''}`).join('\n')
+    ? S.products.map((p,i) => `${icons[i%icons.length]} *${p.name}*${p.price ? ' — '+p.price : ''}`).join('
+')
     : '🔹 *Produk unggulan kami tersedia dalam berbagai pilihan*';
 
   const orderMap = { wa:'Chat WA ini', shopee:'Shopee', tokopedia:'Tokopedia',
