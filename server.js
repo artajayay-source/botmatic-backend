@@ -1,5 +1,5 @@
 /**
- * BotMatic UMKM — Backend API Server v4.0
+ * BotMatic UMKM — Backend API Server v4.1
  * Stack: Node.js + Express + Supabase Auth + Baileys (WhatsApp) + Claude AI
  *
  * ARSITEKTUR AUTH:
